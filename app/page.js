@@ -20,7 +20,7 @@ export default function Home() {
 
       {/* Branding Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
           OBSTEDESIGN
         </h1>
         <p className="mt-2 text-muted-foreground">
@@ -50,7 +50,7 @@ export default function Home() {
 
           {/* Password */}
           <div className="space-y-2">
-            <Label htmlFor="password">Contrasena</Label>
+            <Label htmlFor="password">Contraseña</Label>
             <Input
               id="password"
               type="password"
@@ -68,7 +68,7 @@ export default function Home() {
               Recordarme
             </label>
             <Button variant="link" size="sm" className="px-0 h-auto">
-              Olvidaste tu contrasena?
+              Olvidaste tu contraseña?
             </Button>
           </div>
 
