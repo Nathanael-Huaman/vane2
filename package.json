@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.3",
+    "@prisma/adapter-libsql": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.14.0",
@@ -23,13 +26,19 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "prisma": "^7.8.0",
     "tailwindcss": "^4"
   },
   "pnpm": {
     "overrides": {
       "postcss": "^8.5.14"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma"
+    ]
   }
 }

@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Usuario {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  role         String   @default("cliente")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sesiones Sesion[]
+
+  @@map("usuarios")
+}
+
+model Sesion {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  expiresAt    DateTime
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime @default(now())
+
+  usuario Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sesiones")
+}
