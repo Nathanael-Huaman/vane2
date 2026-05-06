@@ -50,7 +50,7 @@ export default function Home() {
 
           {/* Password */}
           <div className="space-y-2">
-            <Label htmlFor="password">Contrasena</Label>
+            <Label htmlFor="password">Contraseña</Label>
             <Input
               id="password"
               type="password"
@@ -68,7 +68,7 @@ export default function Home() {
               Recordarme
             </label>
             <Button variant="link" size="sm" className="px-0 h-auto">
-              Olvidaste tu contrasena?
+              Olvidaste tu contraseña?
             </Button>
           </div>
 
