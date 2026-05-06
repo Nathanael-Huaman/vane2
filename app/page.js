@@ -20,7 +20,7 @@ export default function Home() {
 
       {/* Branding Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
           OBSTEDESIGN
         </h1>
         <p className="mt-2 text-muted-foreground">
