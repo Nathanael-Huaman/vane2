@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
-import { isAdmin, isCliente } from "@/lib/auth/flags";
+import { useContext } from "react";
+import { AuthContext } from "@/hooks/use-auth";
 import { isRoleValid } from "@/lib/types";
 
 /**
@@ -12,15 +12,18 @@ import { isRoleValid } from "@/lib/types";
  *
  * Props:
  *   allowedRoles: string[]  — lista de roles permitidos, ej. ["cliente", "administrador"]
- *   fallback?: ReactNode    — contenido alternativo cuando no hay acceso
+ *   role?: string          — rol resuelto externamente, util para render server-side
+ *   fallback?: ReactNode   — contenido alternativo cuando no hay acceso
  */
-export function RoleGuard({ children, allowedRoles, fallback = null }) {
-  const { user, loading } = useAuth();
+export function RoleGuard({ children, allowedRoles, role, fallback = null }) {
+  const authState = useContext(AuthContext);
+  const resolvedRole = role ?? authState?.user?.role ?? null;
+  const isLoading = role === undefined && authState?.loading;
 
-  if (loading) return null;
-  if (!user) return fallback;
-  if (!isRoleValid(user.role)) return fallback;
-  if (!allowedRoles.includes(user.role)) return fallback;
+  if (isLoading) return null;
+  if (!resolvedRole) return fallback;
+  if (!isRoleValid(resolvedRole)) return fallback;
+  if (!allowedRoles.includes(resolvedRole)) return fallback;
 
   return children;
 }
@@ -28,9 +31,9 @@ export function RoleGuard({ children, allowedRoles, fallback = null }) {
 /**
  * Guarda exclusiva para administradores.
  */
-export function AdminOnly({ children, fallback = null }) {
+export function AdminOnly({ children, role, fallback = null }) {
   return (
-    <RoleGuard allowedRoles={["administrador"]} fallback={fallback}>
+    <RoleGuard allowedRoles={["administrador"]} role={role} fallback={fallback}>
       {children}
     </RoleGuard>
   );
@@ -39,9 +42,9 @@ export function AdminOnly({ children, fallback = null }) {
 /**
  * Guarda exclusiva para clientes.
  */
-export function ClienteOnly({ children, fallback = null }) {
+export function ClienteOnly({ children, role, fallback = null }) {
   return (
-    <RoleGuard allowedRoles={["cliente"]} fallback={fallback}>
+    <RoleGuard allowedRoles={["cliente"]} role={role} fallback={fallback}>
       {children}
     </RoleGuard>
   );

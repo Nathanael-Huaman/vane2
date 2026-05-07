@@ -1,11 +1,7 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { Store, Sparkles, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { signOutUser } from "@/lib/auth/auth-client";
 import { AdminOnly, ClienteOnly } from "@/components/role-guard";
+import { SignOutButton } from "@/components/sign-out-button";
 import {
   Card,
   CardContent,
@@ -15,25 +11,17 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { getAuthenticatedSession } from "@/lib/server/auth-session";
+import { isAdmin as isAdminRole } from "@/lib/auth/flags";
 
-export default function TiendaPage() {
-  const { user, loading, error, isAuthenticated, isAdmin } = useAuth();
-  const [isSigningOut, setIsSigningOut] = useState(false);
+export default async function TiendaPage() {
+  const sessionResult = await getAuthenticatedSession();
+  const user = sessionResult.ok ? sessionResult.data : null;
+  const isAuthenticated = sessionResult.ok;
+  const isAdmin = isAdminRole(user?.role);
+  const hasAuthError = !sessionResult.ok && sessionResult.error.status !== 401;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <Skeleton className="h-10 w-56" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
+  if (hasAuthError) {
     return (
       <div className="min-h-screen bg-background p-8">
         <div className="mx-auto max-w-md space-y-6">
@@ -110,21 +98,7 @@ export default function TiendaPage() {
             <Badge variant={isAdmin ? "default" : "secondary"}>
               {isAdmin ? "administrador" : "cliente"}
             </Badge>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSigningOut}
-              onClick={async () => {
-                setIsSigningOut(true);
-                try {
-                  await signOutUser({ callbackUrl: "/" });
-                } finally {
-                  setIsSigningOut(false);
-                }
-              }}
-            >
-              {isSigningOut ? "Cerrando sesion..." : "Cerrar sesion"}
-            </Button>
+            <SignOutButton className="w-auto" />
           </div>
         </header>
 
@@ -145,7 +119,7 @@ export default function TiendaPage() {
           </CardContent>
         </Card>
 
-        <AdminOnly>
+        <AdminOnly role={user.role}>
           <Card className="border-primary/50">
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -164,7 +138,7 @@ export default function TiendaPage() {
           </Card>
         </AdminOnly>
 
-        <ClienteOnly>
+        <ClienteOnly role={user.role}>
           <Card className="border-secondary/40">
             <CardHeader>
               <div className="flex items-center gap-2">

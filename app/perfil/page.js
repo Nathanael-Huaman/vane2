@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import {
   Card,
@@ -12,27 +8,20 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { AdminOnly, ClienteOnly } from "@/components/role-guard";
 import { User, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
-import { signOutUser } from "@/lib/auth/auth-client";
+import { SignOutButton } from "@/components/sign-out-button";
+import { getAuthenticatedSession } from "@/lib/server/auth-session";
+import { isAdmin as isAdminRole } from "@/lib/auth/flags";
 
-export default function PerfilPage() {
-  const { user, loading, error, isAuthenticated, isAdmin } = useAuth();
-  const [isSigningOut, setIsSigningOut] = useState(false);
+export default async function PerfilPage() {
+  const sessionResult = await getAuthenticatedSession();
+  const user = sessionResult.ok ? sessionResult.data : null;
+  const isAuthenticated = sessionResult.ok;
+  const isAdmin = isAdminRole(user?.role);
+  const hasAuthError = !sessionResult.ok && sessionResult.error.status !== 401;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="mx-auto max-w-md space-y-6">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-40 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
+  if (hasAuthError) {
     return (
       <div className="min-h-screen bg-background p-8">
         <div className="mx-auto max-w-md space-y-6">
@@ -116,26 +105,11 @@ export default function PerfilPage() {
                     {user.role}
                   </Badge>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  disabled={isSigningOut}
-                  onClick={async () => {
-                    setIsSigningOut(true);
-                    try {
-                      await signOutUser({ callbackUrl: "/" });
-                    } finally {
-                      setIsSigningOut(false);
-                    }
-                  }}
-                >
-                  {isSigningOut ? "Cerrando sesion..." : "Cerrar sesion"}
-                </Button>
+                <SignOutButton />
               </CardContent>
             </Card>
 
-            <AdminOnly>
+            <AdminOnly role={user.role}>
               <Card className="border-primary/50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
@@ -157,7 +131,7 @@ export default function PerfilPage() {
               </Card>
             </AdminOnly>
 
-            <ClienteOnly>
+            <ClienteOnly role={user.role}>
               <Card className="border-secondary/50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
