@@ -8,19 +8,60 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminOnly, ClienteOnly } from "@/components/role-guard";
-import { User, Shield, ShoppingBag } from "lucide-react";
+import { User, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
 
 export default function PerfilPage() {
-  const { user, loading, isAuthenticated, isAdmin } = useAuth();
+  const { user, loading, error, isAuthenticated, isAdmin } = useAuth();
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-8">
-        <Skeleton className="h-8 w-48 mb-6" />
-        <Skeleton className="h-40 w-full max-w-md" />
+        <div className="mx-auto max-w-md space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="mx-auto max-w-md space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle
+                className="h-5 w-5 text-destructive"
+                aria-hidden="true"
+              />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Perfil de usuario
+            </h1>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>No se pudo verificar tu sesion</CardTitle>
+              <CardDescription>
+                Ocurrio un problema al comprobar tu estado de autenticacion.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Por favor, intenta nuevamente mas tarde. Si el problema persiste,
+                contacta a soporte.
+              </p>
+              <Button variant="outline" className="w-full" asChild>
+                <a href="/">Volver al inicio</a>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -32,7 +73,9 @@ export default function PerfilPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
             <User className="h-5 w-5 text-primary" aria-hidden="true" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Perfil de usuario</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Perfil de usuario
+          </h1>
         </div>
 
         {!isAuthenticated ? (
@@ -43,11 +86,14 @@ export default function PerfilPage() {
                 No hay una sesion activa en este momento.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Inicia sesion para ver la informacion de tu cuenta y los paneles
                 disponibles segun tu rol.
               </p>
+              <Button className="w-full" asChild>
+                <a href="/">Iniciar sesion</a>
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -59,13 +105,12 @@ export default function PerfilPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between rounded-lg border p-3">
-                  <span className="text-sm text-muted-foreground">Rol asignado</span>
+                  <span className="text-sm text-muted-foreground">
+                    Rol asignado
+                  </span>
                   <Badge variant={isAdmin ? "default" : "secondary"}>
                     {user.role}
                   </Badge>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  ID de usuario: <span className="font-mono">{user.id}</span>
                 </div>
               </CardContent>
             </Card>
@@ -74,8 +119,13 @@ export default function PerfilPage() {
               <Card className="border-primary/50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-primary" aria-hidden="true" />
-                    <CardTitle className="text-base">Panel de administrador</CardTitle>
+                    <Shield
+                      className="h-4 w-4 text-primary"
+                      aria-hidden="true"
+                    />
+                    <CardTitle className="text-base">
+                      Panel de administrador
+                    </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -95,12 +145,15 @@ export default function PerfilPage() {
                       className="h-4 w-4 text-secondary-foreground"
                       aria-hidden="true"
                     />
-                    <CardTitle className="text-base">Panel de cliente</CardTitle>
+                    <CardTitle className="text-base">
+                      Panel de cliente
+                    </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Este contenido solo es visible para usuarios con rol cliente.
+                    Este contenido solo es visible para usuarios con rol
+                    cliente.
                   </p>
                 </CardContent>
               </Card>

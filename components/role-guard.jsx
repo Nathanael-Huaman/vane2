@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { isAdmin, isCliente } from "@/lib/auth/flags";
+import { isRoleValid } from "@/lib/types";
 
 /**
  * Guarda de acceso por rol.
@@ -18,6 +19,7 @@ export function RoleGuard({ children, allowedRoles, fallback = null }) {
 
   if (loading) return null;
   if (!user) return fallback;
+  if (!isRoleValid(user.role)) return fallback;
   if (!allowedRoles.includes(user.role)) return fallback;
 
   return children;
@@ -27,22 +29,20 @@ export function RoleGuard({ children, allowedRoles, fallback = null }) {
  * Guarda exclusiva para administradores.
  */
 export function AdminOnly({ children, fallback = null }) {
-  const { user, loading } = useAuth();
-
-  if (loading) return null;
-  if (!user || !isAdmin(user.role)) return fallback;
-
-  return children;
+  return (
+    <RoleGuard allowedRoles={["administrador"]} fallback={fallback}>
+      {children}
+    </RoleGuard>
+  );
 }
 
 /**
  * Guarda exclusiva para clientes.
  */
 export function ClienteOnly({ children, fallback = null }) {
-  const { user, loading } = useAuth();
-
-  if (loading) return null;
-  if (!user || !isCliente(user.role)) return fallback;
-
-  return children;
+  return (
+    <RoleGuard allowedRoles={["cliente"]} fallback={fallback}>
+      {children}
+    </RoleGuard>
+  );
 }

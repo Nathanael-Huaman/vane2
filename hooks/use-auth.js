@@ -16,6 +16,7 @@ export const AuthContext = createContext(null);
  *   {
  *     user: UsuarioPublico | null,
  *     loading: boolean,
+ *     error: boolean,
  *     isAuthenticated: boolean,
  *     isAdmin: boolean,
  *     isCliente: boolean,
