@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Store, Sparkles, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
-import { AdminOnly, ClienteOnly } from "@/components/role-guard";
+import { AdminViewModeSwitcher } from "@/components/admin-view-mode-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
 import {
   Card,
@@ -13,6 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAuthenticatedSession } from "@/lib/server/auth-session";
 import { isAdmin as isAdminRole } from "@/lib/auth/flags";
+import { resolveSessionViewMode } from "@/lib/server/view-mode";
+import {
+  VIEW_MODE_ADMINISTRADOR,
+  VIEW_MODE_CLIENTE,
+} from "@/lib/types";
 
 export default async function TiendaPage() {
   const sessionResult = await getAuthenticatedSession();
@@ -20,6 +25,11 @@ export default async function TiendaPage() {
   const isAuthenticated = sessionResult.ok;
   const isAdmin = isAdminRole(user?.role);
   const hasAuthError = !sessionResult.ok && sessionResult.error.status !== 401;
+  const sessionView = isAuthenticated
+    ? await resolveSessionViewMode(user)
+    : { viewMode: VIEW_MODE_CLIENTE, canToggleViewMode: false };
+  const isAdminView = isAdmin && sessionView.viewMode === VIEW_MODE_ADMINISTRADOR;
+  const isClientView = !isAdmin || sessionView.viewMode === VIEW_MODE_CLIENTE;
 
   if (hasAuthError) {
     return (
@@ -98,9 +108,18 @@ export default async function TiendaPage() {
             <Badge variant={isAdmin ? "default" : "secondary"}>
               {isAdmin ? "administrador" : "cliente"}
             </Badge>
+            {isAdmin && (
+              <Badge variant="outline">
+                {isAdminView ? "vista administrador" : "vista cliente"}
+              </Badge>
+            )}
             <SignOutButton className="w-auto" />
           </div>
         </header>
+
+        {sessionView.canToggleViewMode && (
+          <AdminViewModeSwitcher currentViewMode={sessionView.viewMode} />
+        )}
 
         <Card>
           <CardHeader>
@@ -119,7 +138,7 @@ export default async function TiendaPage() {
           </CardContent>
         </Card>
 
-        <AdminOnly role={user.role}>
+        {isAdminView && (
           <Card className="border-primary/50">
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -136,23 +155,29 @@ export default async function TiendaPage() {
               </div>
             </CardContent>
           </Card>
-        </AdminOnly>
+        )}
 
-        <ClienteOnly role={user.role}>
+        {isClientView && (
           <Card className="border-secondary/40">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-secondary-foreground" aria-hidden="true" />
                 <CardTitle>Experiencia cliente activa</CardTitle>
               </div>
+              {isAdmin && (
+                <CardDescription>
+                  Estas navegando como cliente dentro de tu sesion de administrador.
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Estas en la vista base de compra. Las opciones administrativas se mantienen ocultas.
+                Estas en la vista base de compra. Las opciones administrativas se
+                mantienen ocultas en esta experiencia.
               </p>
             </CardContent>
           </Card>
-        </ClienteOnly>
+        )}
       </div>
     </div>
   );

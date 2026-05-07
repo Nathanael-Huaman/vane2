@@ -8,6 +8,11 @@ enum Role {
   administrador
 }
 
+enum ViewMode {
+  cliente
+  administrador
+}
+
 datasource db {
   provider = "sqlite"
 }
@@ -34,6 +39,7 @@ model Sesion {
   userId       String
   sessionToken String   @unique
   expiresAt    DateTime
+  viewMode     ViewMode?
   userAgent    String?
   ip           String?
   createdAt    DateTime @default(now())
