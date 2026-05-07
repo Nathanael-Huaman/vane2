@@ -30,8 +30,10 @@ export function AuthProvider({ children }) {
           setUser(res.data);
           setError(false);
         } else {
+          const status = res?.error?.status;
           setUser(null);
-          setError(false);
+          // 401: sin sesion. Cualquier otro status: error tecnico.
+          setError(status !== 401);
         }
       })
       .catch(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -57,7 +58,7 @@ export default function PerfilPage() {
                 contacta a soporte.
               </p>
               <Button variant="outline" className="w-full" asChild>
-                <a href="/">Volver al inicio</a>
+                <Link href="/">Volver al inicio</Link>
               </Button>
             </CardContent>
           </Card>
@@ -92,7 +93,7 @@ export default function PerfilPage() {
                 disponibles segun tu rol.
               </p>
               <Button className="w-full" asChild>
-                <a href="/">Iniciar sesion</a>
+                <Link href="/">Iniciar sesion</Link>
               </Button>
             </CardContent>
           </Card>
