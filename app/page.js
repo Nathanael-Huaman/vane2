@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { getProviders } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -12,20 +15,61 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import {
-  signInWithCredentials,
-  signInWithGoogle,
-} from "@/lib/auth/auth-client";
+import { useAuth } from "@/hooks/use-auth";
+import { signInWithGoogle } from "@/lib/auth/auth-client";
+import { signInWithCredentials as signInWithCredentialsAction } from "@/lib/actions/auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Home() {
+  const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const redirectTimeoutRef = useRef(null);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleProviderEnabled, setGoogleProviderEnabled] = useState(false);
+  const [providersLoading, setProvidersLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [globalError, setGlobalError] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace("/perfil");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProviders() {
+      try {
+        const providers = await getProviders();
+        if (!isMounted) return;
+        setGoogleProviderEnabled(Boolean(providers?.google));
+      } catch {
+        if (!isMounted) return;
+        setGoogleProviderEnabled(false);
+      } finally {
+        if (isMounted) setProvidersLoading(false);
+      }
+    }
+
+    loadProviders();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function validateField(name, value) {
     if (name === "email") {
@@ -68,21 +112,24 @@ export default function Home() {
 
     setLoading(true);
     try {
-      const result = await signInWithCredentials({
+      const result = await signInWithCredentialsAction({
         email: formData.email,
         password: formData.password,
       });
 
       if (!result.ok) {
         setGlobalError(
-          result.error || "Credenciales invalidas. Intenta nuevamente."
+          result.error?.message || "Credenciales invalidas. Intenta nuevamente."
         );
         return;
       }
 
       setSuccess(true);
       setFormData({ email: "", password: "" });
-      window.location.href = "/perfil";
+      redirectTimeoutRef.current = setTimeout(() => {
+        router.replace("/perfil");
+        router.refresh();
+      }, 800);
     } catch {
       setGlobalError("Ocurrio un error inesperado. Intenta nuevamente.");
     } finally {
@@ -92,6 +139,11 @@ export default function Home() {
 
   async function handleGoogleSignIn() {
     setGlobalError("");
+    if (providersLoading) return;
+    if (!googleProviderEnabled) {
+      setGlobalError("El acceso con Google no esta disponible en este entorno.");
+      return;
+    }
     setGoogleLoading(true);
     try {
       const result = await signInWithGoogle();
@@ -107,6 +159,34 @@ export default function Home() {
     } finally {
       setGoogleLoading(false);
     }
+  }
+
+  if (authLoading || isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <svg
+          className="animate-spin h-8 w-8 text-primary"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+      </div>
+    );
   }
 
   return (
@@ -200,24 +280,24 @@ export default function Home() {
             </div>
 
             {/* Remember + Forgot */}
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm">
               <label className="flex items-center gap-2 text-muted-foreground cursor-pointer">
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   disabled={loading}
                 />
                 Recordarme
               </label>
-              <Button
-                variant="link"
-                size="sm"
-                className="px-0 h-auto"
-                type="button"
-                disabled={loading}
+              <Link
+                href="/recuperar-contrasena"
+                className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+                tabIndex={loading ? -1 : undefined}
               >
                 Olvidaste tu contrasena?
-              </Button>
+              </Link>
             </div>
 
             {/* Submit Button */}
@@ -277,7 +357,13 @@ export default function Home() {
               size="lg"
               type="button"
               onClick={handleGoogleSignIn}
-              disabled={loading || googleLoading}
+              disabled={
+                loading ||
+                googleLoading ||
+                providersLoading ||
+                !googleProviderEnabled
+              }
+              aria-busy={googleLoading || providersLoading}
             >
               {googleLoading ? (
                 <span className="flex items-center gap-2">
@@ -304,6 +390,10 @@ export default function Home() {
                   </svg>
                   Conectando...
                 </span>
+              ) : providersLoading ? (
+                "Verificando Google..."
+              ) : !googleProviderEnabled ? (
+                "Google no disponible"
               ) : (
                 <>
                   <svg

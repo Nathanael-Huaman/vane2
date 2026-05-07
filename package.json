@@ -11,7 +11,8 @@
     "validate:ticket-03": "node scripts/validate-ticket-03.mjs",
     "validate:ticket-04": "node scripts/validate-ticket-04.mjs",
     "validate:ticket-05": "node scripts/validate-ticket-05.mjs",
-    "validate:ticket-06": "node scripts/validate-ticket-06.mjs"
+    "validate:ticket-06": "node scripts/validate-ticket-06.mjs",
+    "validate:ticket-07": "node scripts/validate-ticket-07.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
