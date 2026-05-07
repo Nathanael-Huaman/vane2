@@ -60,7 +60,11 @@ section("3. Cliente de autenticacion para provider Google");
 
 assert("auth client usa provider google", authClient.includes('const PROVIDER_GOOGLE = "google"'));
 assert("auth client usa nextAuth signIn", authClient.includes("nextAuthSignIn(PROVIDER_GOOGLE"));
-assert("auth client define callback por defecto /tienda", authClient.includes('callbackUrl: options.callbackUrl || "/tienda"'));
+assert(
+  "auth client define callback por defecto /tienda",
+  authClient.includes("DEFAULT_POST_LOGIN_URL") &&
+    authClient.includes("callbackUrl: options.callbackUrl || DEFAULT_POST_LOGIN_URL")
+);
 assert(
   "auth client devuelve mensaje minimo de error",
   authClient.includes("No se pudo iniciar sesion con Google. Intenta nuevamente.")

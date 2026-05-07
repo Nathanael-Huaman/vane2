@@ -44,7 +44,8 @@ section("2. Redireccionamiento post-login");
 assert("login redirige a /tienda al detectar sesion activa", loginPage.includes('router.replace("/tienda")'));
 assert(
   "Google login define callback por defecto a /tienda",
-  authClient.includes('callbackUrl: options.callbackUrl || "/tienda"')
+  authClient.includes("DEFAULT_POST_LOGIN_URL") &&
+    authClient.includes("callbackUrl: options.callbackUrl || DEFAULT_POST_LOGIN_URL")
 );
 
 section("3. Entrada compartida a la tienda");

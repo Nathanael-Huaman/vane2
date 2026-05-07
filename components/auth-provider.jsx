@@ -5,6 +5,8 @@ import { SessionProvider, useSession } from "next-auth/react";
 import { AuthContext } from "@/hooks/use-auth";
 import { isAdmin, isCliente } from "@/lib/auth/flags";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 /**
  * Proveedor interno que lee la sesion de Auth.js y expone
  * el estado de autenticacion via AuthContext.
@@ -17,10 +19,15 @@ function AuthStateProvider({ children }) {
   const error = status === "error";
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      // Sesion no disponible — estado limpio.
-    }
-  }, [status]);
+    if (!isDev) return;
+    console.info("[auth-provider] Estado de sesion", {
+      status,
+      hasSession: Boolean(session),
+      hasUser: Boolean(session?.user),
+      userEmail: session?.user?.email ?? null,
+      userRole: session?.user?.role ?? null,
+    });
+  }, [session, status]);
 
   const value = useMemo(
     () => ({

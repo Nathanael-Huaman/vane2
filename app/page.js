@@ -16,12 +16,18 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
-import { signInWithCredentials, signInWithGoogle } from "@/lib/auth/auth-client";
+import { signInWithGoogle } from "@/lib/auth/auth-client";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GENERIC_GOOGLE_ERROR =
   "No se pudo iniciar sesion con Google. Intenta nuevamente.";
 const GENERIC_CREDENTIALS_ERROR = "Credenciales invalidas. Intenta nuevamente.";
+const isDev = process.env.NODE_ENV !== "production";
+
+function logLoginDebug(message, details = null) {
+  if (!isDev) return;
+  console.info(`[login-page] ${message}`, details ?? "");
+}
 
 function getSafeAuthErrorFromQuery(errorCode) {
   if (!errorCode) return "";
@@ -118,27 +124,12 @@ export default function Home() {
     }
 
     setLoading(true);
-    try {
-      const result = await signInWithCredentials({
-        email: normalizedEmail,
-        password: formData.password,
-      });
-
-      if (!result.ok) {
-        setGlobalError(
-          result.error?.message || "Credenciales invalidas. Intenta nuevamente."
-        );
-        return;
-      }
-
-      setSuccess(true);
-      setFormData({ email: "", password: "" });
-      router.replace("/tienda");
-    } catch {
-      setGlobalError("Ocurrio un error inesperado. Intenta nuevamente.");
-    } finally {
-      setLoading(false);
-    }
+    setSuccess(true);
+    e.currentTarget.elements.email.value = normalizedEmail;
+    logLoginDebug("Enviando formulario nativo de credenciales", {
+      email: normalizedEmail,
+    });
+    e.currentTarget.submit();
   }
 
   async function handleGoogleSignIn() {
@@ -241,7 +232,14 @@ export default function Home() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <form
+            onSubmit={handleSubmit}
+            action="/api/auth/credentials-login"
+            method="POST"
+            className="space-y-4"
+            noValidate
+          >
+            <input type="hidden" name="callbackUrl" value="/tienda" />
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Correo electronico</Label>
