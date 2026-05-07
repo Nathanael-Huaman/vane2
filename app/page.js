@@ -49,7 +49,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.replace("/perfil");
+      router.replace("/tienda");
     }
   }, [authLoading, isAuthenticated, router]);
 
@@ -133,6 +133,7 @@ export default function Home() {
 
       setSuccess(true);
       setFormData({ email: "", password: "" });
+      router.replace("/tienda");
     } catch {
       setGlobalError("Ocurrio un error inesperado. Intenta nuevamente.");
     } finally {

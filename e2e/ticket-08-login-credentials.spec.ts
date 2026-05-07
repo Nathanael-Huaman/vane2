@@ -15,7 +15,7 @@ test.describe("Ticket 08 - Login con credenciales", () => {
     await page.getByLabel("Contrasena").fill(TEST_PASSWORD);
     await page.getByRole("button", { name: "Iniciar sesion con correo" }).click();
 
-    await expect(page).toHaveURL(/\/perfil$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/tienda$/, { timeout: 15_000 });
   });
 
   test("muestra error minimo con credenciales invalidas", async ({ page }) => {
