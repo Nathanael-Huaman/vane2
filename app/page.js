@@ -94,11 +94,17 @@ export default function Home() {
     setGlobalError("");
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
+      if (!result.ok) {
+        setGlobalError(
+          result.error || "No se pudo iniciar sesion con Google. Intenta nuevamente."
+        );
+      }
     } catch {
       setGlobalError(
         "No se pudo iniciar sesion con Google. Intenta nuevamente."
       );
+    } finally {
       setGoogleLoading(false);
     }
   }

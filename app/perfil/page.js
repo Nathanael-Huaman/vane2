@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import {
@@ -14,9 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminOnly, ClienteOnly } from "@/components/role-guard";
 import { User, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
+import { signOutUser } from "@/lib/auth/auth-client";
 
 export default function PerfilPage() {
   const { user, loading, error, isAuthenticated, isAdmin } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   if (loading) {
     return (
@@ -113,6 +116,22 @@ export default function PerfilPage() {
                     {user.role}
                   </Badge>
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isSigningOut}
+                  onClick={async () => {
+                    setIsSigningOut(true);
+                    try {
+                      await signOutUser({ callbackUrl: "/" });
+                    } finally {
+                      setIsSigningOut(false);
+                    }
+                  }}
+                >
+                  {isSigningOut ? "Cerrando sesion..." : "Cerrar sesion"}
+                </Button>
               </CardContent>
             </Card>
 

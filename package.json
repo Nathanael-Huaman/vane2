@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,7 +10,8 @@
     "lint": "eslint",
     "validate:ticket-03": "node scripts/validate-ticket-03.mjs",
     "validate:ticket-04": "node scripts/validate-ticket-04.mjs",
-    "validate:ticket-05": "node scripts/validate-ticket-05.mjs"
+    "validate:ticket-05": "node scripts/validate-ticket-05.mjs",
+    "validate:ticket-06": "node scripts/validate-ticket-06.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
