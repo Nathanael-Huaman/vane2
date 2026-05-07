@@ -1,69 +1,66 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { SessionProvider, useSession } from "next-auth/react";
 import { AuthContext } from "@/hooks/use-auth";
-import { getCurrentUser } from "@/lib/actions/auth";
 import { isAdmin, isCliente } from "@/lib/auth/flags";
+
+/**
+ * Proveedor interno que lee la sesion de Auth.js y expone
+ * el estado de autenticacion via AuthContext.
+ */
+function AuthStateProvider({ children }) {
+  const { data: session, status } = useSession();
+
+  const loading = status === "loading";
+  const user = session?.user || null;
+  const error = status === "error";
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      // Sesion no disponible — estado limpio.
+    }
+  }, [status]);
+
+  const value = useMemo(
+    () => ({
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            createdAt: null,
+            updatedAt: null,
+          }
+        : null,
+      loading,
+      error: status !== "loading" && error,
+      isAuthenticated: status === "authenticated" && !!user,
+      isAdmin: isAdmin(user?.role),
+      isCliente: isCliente(user?.role),
+    }),
+    [user, loading, error, status]
+  );
+
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
+}
 
 /**
  * Proveedor de autenticacion para toda la aplicacion.
  *
  * Gestiona:
- *   - Carga inicial del usuario autenticado.
+ *   - SessionProvider de Auth.js (next-auth/react).
  *   - Estados de loading, error y sin sesion.
  *   - Flags derivados de rol (isAdmin, isCliente).
  *
  * Uso: envolver la app en layout.js junto a ThemeProvider.
  */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    getCurrentUser()
-      .then((res) => {
-        if (cancelled) return;
-        if (res.ok && res.data) {
-          setUser(res.data);
-          setError(false);
-        } else {
-          const status = res?.error?.status;
-          setUser(null);
-          // 401: sin sesion. Cualquier otro status: error tecnico.
-          setError(status !== 401);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setUser(null);
-          setError(true);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      error,
-      isAuthenticated: !!user,
-      isAdmin: isAdmin(user?.role),
-      isCliente: isCliente(user?.role),
-    }),
-    [user, loading, error]
-  );
-
   return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    <SessionProvider>
+      <AuthStateProvider>{children}</AuthStateProvider>
+    </SessionProvider>
   );
 }

@@ -126,8 +126,8 @@ for (const [label, fn] of checks) {
 console.log("\n3. Verificacion de contratos de respuesta segura");
 
 const fieldsPublico = Object.keys(publico);
-assert("UsuarioPublico tiene 5 campos", fieldsPublico.length === 5);
-assert("campos correctos", fieldsPublico.includes("id") && fieldsPublico.includes("email") && fieldsPublico.includes("role") && fieldsPublico.includes("createdAt") && fieldsPublico.includes("updatedAt"));
+assert("UsuarioPublico tiene 8 campos", fieldsPublico.length === 8);
+assert("campos correctos", fieldsPublico.includes("id") && fieldsPublico.includes("email") && fieldsPublico.includes("role") && fieldsPublico.includes("createdAt") && fieldsPublico.includes("updatedAt") && fieldsPublico.includes("name") && fieldsPublico.includes("image") && fieldsPublico.includes("emailVerified"));
 
 const strPublico = JSON.stringify(publico);
 assert("JSON no contiene passwordHash", !strPublico.includes("passwordHash"));

@@ -13,14 +13,18 @@ datasource db {
 }
 
 model Usuario {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String?
-  role         Role     @default(cliente)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  role          Role      @default(cliente)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   sesiones Sesion[]
+  cuentas  Account[]
 
   @@map("usuarios")
 }
@@ -38,4 +42,33 @@ model Sesion {
 
   @@index([userId, createdAt])
   @@map("sesiones")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  usuario Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("cuentas")
+}
+
+model VerificationToken {
+  identifier String   @id
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("tokens_verificacion")
 }
