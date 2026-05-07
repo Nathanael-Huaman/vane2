@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getActiveSessions, normalizeSessionError } from "@/lib/client/sessions";
+import {
+  getActiveSessions,
+  normalizeSessionError,
+  revokeActiveSession,
+} from "@/lib/client/sessions";
 
 /**
  * Hook para gestionar el estado de sesiones activas del usuario.
@@ -18,13 +22,16 @@ import { getActiveSessions, normalizeSessionError } from "@/lib/client/sessions"
  *   sessions: import("@/lib/types").ActiveSessionView[] | null,
  *   loading: boolean,
  *   error: string | null,
+ *   revokingSessionId: string | null,
  *   refetch: () => void,
+ *   revokeById: (sessionId: string) => Promise<{ ok: boolean, error?: string }>,
  * }}
  */
 export function useActiveSessions() {
   const [sessions, setSessions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [revokingSessionId, setRevokingSessionId] = useState(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -53,10 +60,39 @@ export function useActiveSessions() {
     fetchSessions();
   }, [fetchSessions]);
 
+  const revokeById = useCallback(
+    async (sessionId) => {
+      if (!sessionId || typeof sessionId !== "string") {
+        return { ok: false, error: "Sesion invalida" };
+      }
+
+      setRevokingSessionId(sessionId);
+      try {
+        const result = await revokeActiveSession(sessionId);
+        if (!result.ok) {
+          return { ok: false, error: normalizeSessionError(result.error) };
+        }
+
+        await fetchSessions();
+        return { ok: true };
+      } catch (err) {
+        return {
+          ok: false,
+          error: normalizeSessionError({ message: err.message, status: 500 }),
+        };
+      } finally {
+        setRevokingSessionId(null);
+      }
+    },
+    [fetchSessions]
+  );
+
   return {
     sessions,
     loading,
     error,
+    revokingSessionId,
     refetch: fetchSessions,
+    revokeById,
   };
 }

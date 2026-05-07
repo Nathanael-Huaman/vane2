@@ -36,5 +36,6 @@ model Sesion {
 
   usuario Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, createdAt])
   @@map("sesiones")
 }
