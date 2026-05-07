@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getProviders } from "next-auth/react";
 import {
@@ -20,9 +20,19 @@ import { signInWithGoogle } from "@/lib/auth/auth-client";
 import { signInWithCredentials as signInWithCredentialsAction } from "@/lib/actions/auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const GENERIC_GOOGLE_ERROR =
+  "No se pudo iniciar sesion con Google. Intenta nuevamente.";
+const GENERIC_CREDENTIALS_ERROR = "Credenciales invalidas. Intenta nuevamente.";
+
+function getSafeAuthErrorFromQuery(errorCode) {
+  if (!errorCode) return "";
+  if (errorCode === "CredentialsSignin") return GENERIC_CREDENTIALS_ERROR;
+  return GENERIC_GOOGLE_ERROR;
+}
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const redirectTimeoutRef = useRef(null);
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -33,7 +43,11 @@ export default function Home() {
   const [providersLoading, setProvidersLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [globalError, setGlobalError] = useState("");
+  const [ignoreAuthErrorParam, setIgnoreAuthErrorParam] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const authErrorFromQuery = getSafeAuthErrorFromQuery(searchParams.get("error"));
+  const resolvedGlobalError =
+    globalError || (ignoreAuthErrorParam ? "" : authErrorFromQuery);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -88,6 +102,7 @@ export default function Home() {
   function handleChange(e) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setIgnoreAuthErrorParam(true);
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -96,11 +111,13 @@ export default function Home() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setIgnoreAuthErrorParam(true);
     setGlobalError("");
     setSuccess(false);
+    const normalizedEmail = formData.email.trim().toLowerCase();
 
     const newErrors = {
-      email: validateField("email", formData.email),
+      email: validateField("email", normalizedEmail),
       password: validateField("password", formData.password),
     };
 
@@ -113,7 +130,7 @@ export default function Home() {
     setLoading(true);
     try {
       const result = await signInWithCredentialsAction({
-        email: formData.email,
+        email: normalizedEmail,
         password: formData.password,
       });
 
@@ -138,6 +155,7 @@ export default function Home() {
   }
 
   async function handleGoogleSignIn() {
+    setIgnoreAuthErrorParam(true);
     setGlobalError("");
     if (providersLoading) return;
     if (!googleProviderEnabled) {
@@ -219,18 +237,20 @@ export default function Home() {
           {success && (
             <div
               role="alert"
+              aria-live="polite"
               className="mb-4 rounded-lg bg-green-100 dark:bg-green-900/30 px-4 py-3 text-sm text-green-800 dark:text-green-300"
             >
               Sesion iniciada correctamente.
             </div>
           )}
 
-          {globalError && (
+          {resolvedGlobalError && (
             <div
               role="alert"
+              aria-live="polite"
               className="mb-4 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive"
             >
-              {globalError}
+              {resolvedGlobalError}
             </div>
           )}
 
@@ -295,6 +315,7 @@ export default function Home() {
                 href="/recuperar-contrasena"
                 className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
                 tabIndex={loading ? -1 : undefined}
+                aria-disabled={loading}
               >
                 Olvidaste tu contrasena?
               </Link>

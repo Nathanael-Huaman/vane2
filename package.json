@@ -12,7 +12,17 @@
     "validate:ticket-04": "node scripts/validate-ticket-04.mjs",
     "validate:ticket-05": "node scripts/validate-ticket-05.mjs",
     "validate:ticket-06": "node scripts/validate-ticket-06.mjs",
-    "validate:ticket-07": "node scripts/validate-ticket-07.mjs"
+    "validate:ticket-07": "node scripts/validate-ticket-07.mjs",
+    "validate:ticket-08": "node scripts/validate-ticket-08.mjs",
+    "validate:ticket-09": "node scripts/validate-ticket-09.mjs",
+    "seed:test-cliente": "tsx scripts/create-test-cliente-user.ts",
+    "test:ticket-08:runtime": "tsx scripts/test-ticket-08-runtime.ts",
+    "test:ticket-08:e2e": "playwright test e2e/ticket-08-login-credentials.spec.ts",
+    "test:ticket-08": "pnpm validate:ticket-08 && pnpm test:ticket-08:runtime",
+    "test:ticket-08:full": "pnpm test:ticket-08 && pnpm test:ticket-08:e2e",
+    "test:ticket-09:e2e": "playwright test e2e/ticket-09-login-google.spec.ts",
+    "test:ticket-09": "pnpm validate:ticket-09",
+    "test:ticket-09:full": "pnpm test:ticket-09 && pnpm test:ticket-09:e2e"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -36,6 +46,7 @@
     "tw-animate-css": "^1.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.1",
     "@tailwindcss/postcss": "^4",
     "dotenv": "^17.4.2",
     "eslint": "^9",
