@@ -8,11 +8,16 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AdminOnly, ClienteOnly } from "@/components/role-guard";
 import { User, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
+import { AdminViewModeSwitcher } from "@/components/admin-view-mode-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getAuthenticatedSession } from "@/lib/server/auth-session";
 import { isAdmin as isAdminRole } from "@/lib/auth/flags";
+import { resolveSessionViewMode } from "@/lib/server/view-mode";
+import {
+  VIEW_MODE_ADMINISTRADOR,
+  VIEW_MODE_CLIENTE,
+} from "@/lib/types";
 
 export default async function PerfilPage() {
   const sessionResult = await getAuthenticatedSession();
@@ -20,6 +25,11 @@ export default async function PerfilPage() {
   const isAuthenticated = sessionResult.ok;
   const isAdmin = isAdminRole(user?.role);
   const hasAuthError = !sessionResult.ok && sessionResult.error.status !== 401;
+  const sessionView = isAuthenticated
+    ? await resolveSessionViewMode(user)
+    : { viewMode: VIEW_MODE_CLIENTE, canToggleViewMode: false };
+  const isAdminView = isAdmin && sessionView.viewMode === VIEW_MODE_ADMINISTRADOR;
+  const isClientView = !isAdmin || sessionView.viewMode === VIEW_MODE_CLIENTE;
 
   if (hasAuthError) {
     return (
@@ -105,11 +115,25 @@ export default async function PerfilPage() {
                     {user.role}
                   </Badge>
                 </div>
+                {isAdmin && (
+                  <div className="flex items-center justify-between rounded-lg border p-3">
+                    <span className="text-sm text-muted-foreground">
+                      Vista actual
+                    </span>
+                    <Badge variant="outline">
+                      {isAdminView ? "vista administrador" : "vista cliente"}
+                    </Badge>
+                  </div>
+                )}
                 <SignOutButton />
               </CardContent>
             </Card>
 
-            <AdminOnly role={user.role}>
+            {sessionView.canToggleViewMode && (
+              <AdminViewModeSwitcher currentViewMode={sessionView.viewMode} />
+            )}
+
+            {isAdminView && (
               <Card className="border-primary/50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
@@ -129,9 +153,9 @@ export default async function PerfilPage() {
                   </p>
                 </CardContent>
               </Card>
-            </AdminOnly>
+            )}
 
-            <ClienteOnly role={user.role}>
+            {isClientView && (
               <Card className="border-secondary/50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
@@ -143,6 +167,11 @@ export default async function PerfilPage() {
                       Panel de cliente
                     </CardTitle>
                   </div>
+                  {isAdmin && (
+                    <CardDescription>
+                      Vista temporal de cliente dentro de una sesion de administrador.
+                    </CardDescription>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
@@ -151,7 +180,7 @@ export default async function PerfilPage() {
                   </p>
                 </CardContent>
               </Card>
-            </ClienteOnly>
+            )}
           </>
         )}
       </div>
