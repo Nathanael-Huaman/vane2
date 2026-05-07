@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { signInWithMockCredentials } from "@/lib/actions/auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -44,7 +45,7 @@ export default function Home() {
     if (globalError) setGlobalError("");
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setGlobalError("");
     setSuccess(false);
@@ -61,14 +62,28 @@ export default function Home() {
       return;
     }
 
-    // Simulate submit
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      // For demo: show success (in real app this would call server action)
+    try {
+      const result = await signInWithMockCredentials({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (!result.ok) {
+        setGlobalError(result.error?.message || "No se pudo iniciar sesion");
+        return;
+      }
+
       setSuccess(true);
       setFormData({ email: "", password: "" });
-    }, 1500);
+
+      // Recarga contexto auth luego de setear cookie httpOnly en servidor.
+      window.location.href = "/perfil";
+    } catch {
+      setGlobalError("Ocurrio un error inesperado. Intenta nuevamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -103,8 +118,7 @@ export default function Home() {
               role="alert"
               className="mb-4 rounded-lg bg-green-100 dark:bg-green-900/30 px-4 py-3 text-sm text-green-800 dark:text-green-300"
             >
-              Inicio de sesión simulado exitoso. En producción esto redirigirá a
-              la tienda.
+              Sesion iniciada correctamente en modo de desarrollo.
             </div>
           )}
 
