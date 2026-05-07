@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getProviders } from "next-auth/react";
@@ -16,8 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
-import { signInWithGoogle } from "@/lib/auth/auth-client";
-import { signInWithCredentials as signInWithCredentialsAction } from "@/lib/actions/auth";
+import { signInWithCredentials, signInWithGoogle } from "@/lib/auth/auth-client";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GENERIC_GOOGLE_ERROR =
@@ -34,7 +33,6 @@ export default function Home() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const redirectTimeoutRef = useRef(null);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -54,14 +52,6 @@ export default function Home() {
       router.replace("/perfil");
     }
   }, [authLoading, isAuthenticated, router]);
-
-  useEffect(() => {
-    return () => {
-      if (redirectTimeoutRef.current) {
-        clearTimeout(redirectTimeoutRef.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -129,7 +119,7 @@ export default function Home() {
 
     setLoading(true);
     try {
-      const result = await signInWithCredentialsAction({
+      const result = await signInWithCredentials({
         email: normalizedEmail,
         password: formData.password,
       });
@@ -143,10 +133,6 @@ export default function Home() {
 
       setSuccess(true);
       setFormData({ email: "", password: "" });
-      redirectTimeoutRef.current = setTimeout(() => {
-        router.replace("/perfil");
-        router.refresh();
-      }, 800);
     } catch {
       setGlobalError("Ocurrio un error inesperado. Intenta nuevamente.");
     } finally {
