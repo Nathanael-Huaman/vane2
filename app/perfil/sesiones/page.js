@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useActiveSessions } from "@/hooks/use-active-sessions";
 import Link from "next/link";
@@ -26,11 +27,14 @@ import {
   ArrowLeft,
   ShieldCheck,
   Activity,
+  LogOut,
 } from "lucide-react";
 
 export default function ActiveSessionsPage() {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
-  const { sessions, loading, error, refetch } = useActiveSessions();
+  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { sessions, loading, error, refetch, revokeById, revokingSessionId } =
+    useActiveSessions();
+  const [revokeError, setRevokeError] = useState(null);
 
   const isPageLoading = authLoading || loading;
 
@@ -109,6 +113,14 @@ export default function ActiveSessionsPage() {
           </Alert>
         )}
 
+        {!isPageLoading && !error && revokeError && (
+          <Alert variant="destructive">
+            <AlertTriangle aria-hidden="true" />
+            <AlertTitle>No se pudo cerrar la sesion</AlertTitle>
+            <AlertDescription>{revokeError}</AlertDescription>
+          </Alert>
+        )}
+
         {!isPageLoading && !error && sessions && sessions.length === 0 && (
           <Card>
             <CardHeader>
@@ -174,10 +186,26 @@ export default function ActiveSessionsPage() {
                       </span>
                     </div>
 
-                    {/* TODO: Implementar revocacion de sesion individual (ticket futuro) */}
-                    {/* <Button variant="destructive" size="sm" className="w-full mt-2">
-                      Cerrar sesion
-                    </Button> */}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="mt-2 w-full gap-1"
+                      disabled={session.isCurrent || revokingSessionId === session.id}
+                      onClick={async () => {
+                        setRevokeError(null);
+                        const result = await revokeById(session.id);
+                        if (!result.ok) {
+                          setRevokeError(result.error || "No se pudo cerrar la sesion");
+                        }
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" aria-hidden="true" />
+                      {revokingSessionId === session.id
+                        ? "Cerrando..."
+                        : session.isCurrent
+                          ? "Sesion actual"
+                          : "Cerrar sesion"}
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
