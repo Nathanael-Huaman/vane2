@@ -3,6 +3,11 @@ generator client {
   output   = "../lib/generated/prisma"
 }
 
+enum Role {
+  cliente
+  administrador
+}
+
 datasource db {
   provider = "sqlite"
 }
@@ -11,7 +16,7 @@ model Usuario {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String?
-  role         String   @default("cliente")
+  role         Role     @default(cliente)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
