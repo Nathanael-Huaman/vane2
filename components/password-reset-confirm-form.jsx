@@ -107,6 +107,10 @@ export function PasswordResetConfirmForm({ email, token, expiresAt }) {
         <div className="rounded-lg border border-primary/10 bg-primary/5 p-3 text-sm text-muted-foreground">
           <p>Cuenta: {email}</p>
           {expiresAtLabel && <p>El enlace expira: {expiresAtLabel}</p>}
+          <p>
+            Si el sistema detecta demasiados intentos en el futuro, mantendra
+            mensajes minimos para proteger la cuenta.
+          </p>
         </div>
 
         {successMessage && (
