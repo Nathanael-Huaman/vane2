@@ -32,6 +32,7 @@
     "validate:ticket-12": "node scripts/validate-ticket-12.mjs",
     "validate:ticket-13": "node scripts/validate-ticket-13.mjs",
     "validate:ticket-14": "node scripts/validate-ticket-14.mjs",
+    "validate:ticket-15": "node scripts/validate-ticket-15.mjs",
     "seed:test-cliente": "tsx scripts/create-test-cliente-user.ts",
     "seed:test-auth-users": "tsx scripts/create-test-auth-users.ts",
     "test:ticket-08:runtime": "tsx scripts/test-ticket-08-runtime.ts",
@@ -57,7 +58,9 @@
     "test:ticket-13:full": "pnpm test:ticket-13 && pnpm test:ticket-13:e2e",
     "test:ticket-14:e2e": "playwright test e2e/ticket-14-admin-view-mode.spec.ts --project=chromium --workers=1",
     "test:ticket-14": "pnpm seed:test-auth-users && pnpm validate:ticket-14",
-    "test:ticket-14:full": "pnpm test:ticket-14 && pnpm test:ticket-14:e2e"
+    "test:ticket-14:full": "pnpm test:ticket-14 && pnpm test:ticket-14:e2e",
+    "test:ticket-15:runtime": "tsx scripts/test-ticket-15-runtime.ts",
+    "test:ticket-15": "pnpm seed:test-auth-users && pnpm validate:ticket-15 && pnpm test:ticket-15:runtime"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
