@@ -113,12 +113,16 @@ assert(
 section("5. Transporte de email");
 
 assert(
-  "mailer soporta envio real con Resend",
-  mailer.includes("https://api.resend.com/emails")
+  "mailer soporta envio real con Brevo",
+  mailer.includes("https://api.brevo.com/v3/smtp/email")
 );
 assert(
   "mailer tiene fallback local para desarrollo",
   mailer.includes('transport: "log"')
+);
+assert(
+  "mailer soporta plantillas de Brevo",
+  mailer.includes("templateId")
 );
 assert(
   "server action expone requestPasswordResetAction",

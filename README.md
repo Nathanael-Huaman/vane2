@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Frontend Obstedesign
 
-## Getting Started
+## Desarrollo
 
-First, run the development server:
+Ejecuta el proyecto con:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+La app queda disponible en [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Email Transaccional
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+El proyecto usa Brevo como proveedor de email transaccional a traves de su API HTTP.
 
-## Learn More
+Variables requeridas:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+BREVO_API_KEY="xkeysib-tu-api-key-de-brevo"
+EMAIL_FROM="noreply@obsedesign.com"
+EMAIL_FROM_NAME="Obstedesign"
+APP_URL="http://localhost:3000"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Notas:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `BREVO_API_KEY` es obligatoria en produccion para enviar correos reales.
+- `EMAIL_FROM` debe existir y estar verificado en Brevo.
+- `EMAIL_FROM_NAME` es opcional, pero se recomienda para el remitente visible.
+- `APP_URL` se usa para construir enlaces absolutos de recuperacion; si falta, el sistema intenta usar `NEXTAUTH_URL` o `AUTH_URL`.
+- En desarrollo, si no configuras Brevo, el mailer deja una vista previa local en logs en lugar de fallar el flujo.
 
-## Deploy on Vercel
+## Cobertura Actual
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Hoy el unico flujo de email transaccional implementado en el repositorio es la recuperacion de contrasena.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+El servicio `sendTransactionalEmail()` ya queda preparado para:
+
+- correos HTML y texto plano
+- envio mediante plantillas de Brevo con `templateId`
+- parametros dinamicos con `params`
+- manejo de errores sanitizado y logs seguros
+
+No existen aun implementaciones activas de correos de registro ni de notificaciones dentro del proyecto actual; cuando se agreguen, deben reutilizar el mismo servicio de email.
+
+## Pruebas
+
+Validacion del flujo de recuperacion:
+
+```bash
+pnpm test:ticket-15
+```
+
+Pruebas especificas del servicio de email Brevo:
+
+```bash
+pnpm test:email:unit
+pnpm test:email:integration
+```
