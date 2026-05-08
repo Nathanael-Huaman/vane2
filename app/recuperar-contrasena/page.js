@@ -1,14 +1,5 @@
-"use client";
-
-import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PasswordResetRequestForm } from "@/components/password-reset-request-form";
 
 export default function RecuperarContrasenaPage() {
   return (
@@ -22,31 +13,16 @@ export default function RecuperarContrasenaPage() {
           OBSTEDESIGN
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Recuperacion de contrasena
+          Recupera el acceso a tu cuenta
         </p>
       </div>
 
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Proximamente</CardTitle>
-          <CardDescription>
-            La recuperacion de contrasena estara disponible pronto.
-          </CardDescription>
-        </CardHeader>
+      <PasswordResetRequestForm />
 
-        <CardContent className="flex flex-col items-center gap-4">
-          <p className="text-sm text-muted-foreground text-center">
-            Si necesitas restablecer tu contrasena, contacta al administrador.
-          </p>
-
-          <Link
-            href="/"
-            className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-          >
-            Volver al inicio de sesion
-          </Link>
-        </CardContent>
-      </Card>
+      <p className="mt-6 max-w-sm text-center text-xs text-muted-foreground">
+        El enlace de recuperacion es temporal y esta pensado para restaurar el
+        acceso sin exponer informacion sensible del sistema.
+      </p>
     </div>
   );
 }
