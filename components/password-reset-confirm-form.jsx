@@ -2,16 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import {
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle2,
-  KeyRound,
-  Loader2,
-} from "lucide-react";
+import { ArrowLeft, KeyRound } from "lucide-react";
 import { resetPasswordWithTokenAction } from "@/lib/actions/password-reset";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { AuthFeedbackBanner } from "@/components/auth-feedback-banner";
 import {
   Card,
   CardContent,
@@ -21,6 +15,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingButtonContent } from "@/components/loading-button-content";
+import { AUTH_FEEDBACK_MESSAGES } from "@/lib/auth/feedback";
 
 function validatePassword(password) {
   if (!password) {
@@ -84,11 +80,13 @@ export function PasswordResetConfirmForm({ email, token, expiresAt }) {
           return;
         }
 
-        setGlobalError("No se pudo actualizar la contrasena. Intenta nuevamente.");
+        setGlobalError(AUTH_FEEDBACK_MESSAGES.passwordResetUpdateError);
         return;
       }
 
-      setSuccessMessage(result.data?.message || "Contrasena actualizada correctamente.");
+      setSuccessMessage(
+        result.data?.message || AUTH_FEEDBACK_MESSAGES.passwordResetSuccess
+      );
       setPassword("");
       setConfirmPassword("");
     });
@@ -114,24 +112,21 @@ export function PasswordResetConfirmForm({ email, token, expiresAt }) {
         </div>
 
         {successMessage && (
-          <Alert>
-            <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden="true" />
-            <AlertTitle>Contrasena actualizada</AlertTitle>
-            <AlertDescription>
-              <p>{successMessage}</p>
-              <p className="text-xs text-muted-foreground">
-                Ya puedes volver al login e iniciar sesion con tu nueva clave.
-              </p>
-            </AlertDescription>
-          </Alert>
+          <AuthFeedbackBanner
+            tone="success"
+            title="Contrasena actualizada"
+            message={successMessage}
+            description="Ya puedes volver al login e iniciar sesion con tu nueva clave."
+          />
         )}
 
         {globalError && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" aria-hidden="true" />
-            <AlertTitle>No se pudo completar el restablecimiento</AlertTitle>
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
+          <AuthFeedbackBanner
+            tone="error"
+            title="No se pudo completar el restablecimiento"
+            message={globalError}
+            description="Solicita un nuevo enlace si el problema persiste."
+          />
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -175,10 +170,9 @@ export function PasswordResetConfirmForm({ email, token, expiresAt }) {
             aria-busy={isPending}
           >
             {isPending ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Actualizando...
-              </span>
+              <LoadingButtonContent
+                label={AUTH_FEEDBACK_MESSAGES.passwordResetUpdateLoading}
+              />
             ) : (
               <span className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4" aria-hidden="true" />

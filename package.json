@@ -25,6 +25,7 @@
     "validate:ticket-14": "node scripts/validate-ticket-14.mjs",
     "validate:ticket-15": "node scripts/validate-ticket-15.mjs",
     "validate:ticket-16": "node scripts/validate-ticket-16.mjs",
+    "validate:ticket-17": "node scripts/validate-ticket-17.mjs",
     "seed:test-cliente": "tsx scripts/create-test-cliente-user.ts",
     "seed:test-auth-users": "tsx scripts/create-test-auth-users.ts",
     "test:email:unit": "tsx scripts/test-email-brevo-unit.ts",
@@ -58,7 +59,8 @@
     "test:ticket-15:runtime": "tsx scripts/test-ticket-15-runtime.ts",
     "test:ticket-15": "pnpm seed:test-auth-users && pnpm validate:ticket-15 && pnpm test:ticket-15:runtime",
     "test:ticket-15:full": "pnpm test:ticket-15 && pnpm test:email",
-    "test:ticket-16": "pnpm validate:ticket-16"
+    "test:ticket-16": "pnpm validate:ticket-16",
+    "test:ticket-17": "pnpm validate:ticket-17"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

@@ -15,24 +15,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AuthFeedbackBanner } from "@/components/auth-feedback-banner";
+import { LoadingButtonContent } from "@/components/loading-button-content";
 import { useAuth } from "@/hooks/use-auth";
 import { signInWithGoogle } from "@/lib/auth/auth-client";
+import {
+  AUTH_FEEDBACK_MESSAGES,
+  getSafeAuthErrorFromQuery,
+} from "@/lib/auth/feedback";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const GENERIC_GOOGLE_ERROR =
-  "No se pudo iniciar sesion con Google. Intenta nuevamente.";
-const GENERIC_CREDENTIALS_ERROR = "Credenciales invalidas. Intenta nuevamente.";
 const isDev = process.env.NODE_ENV !== "production";
 
 function logLoginDebug(message, details = null) {
   if (!isDev) return;
   console.info(`[login-page] ${message}`, details ?? "");
-}
-
-function getSafeAuthErrorFromQuery(errorCode) {
-  if (!errorCode) return "";
-  if (errorCode === "CredentialsSignin") return GENERIC_CREDENTIALS_ERROR;
-  return GENERIC_GOOGLE_ERROR;
 }
 
 export default function Home() {
@@ -45,7 +42,6 @@ export default function Home() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleProviderEnabled, setGoogleProviderEnabled] = useState(false);
   const [providersLoading, setProvidersLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
   const [globalError, setGlobalError] = useState("");
   const [ignoreAuthErrorParam, setIgnoreAuthErrorParam] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -109,7 +105,6 @@ export default function Home() {
     e.preventDefault();
     setIgnoreAuthErrorParam(true);
     setGlobalError("");
-    setSuccess(false);
     const normalizedEmail = formData.email.trim().toLowerCase();
 
     const newErrors = {
@@ -124,7 +119,6 @@ export default function Home() {
     }
 
     setLoading(true);
-    setSuccess(true);
     e.currentTarget.elements.email.value = normalizedEmail;
     logLoginDebug("Enviando formulario nativo de credenciales", {
       email: normalizedEmail,
@@ -137,21 +131,17 @@ export default function Home() {
     setGlobalError("");
     if (providersLoading) return;
     if (!googleProviderEnabled) {
-      setGlobalError("El acceso con Google no esta disponible en este entorno.");
+      setGlobalError(AUTH_FEEDBACK_MESSAGES.googleUnavailable);
       return;
     }
     setGoogleLoading(true);
     try {
       const result = await signInWithGoogle();
       if (!result.ok) {
-        setGlobalError(
-          result.error || "No se pudo iniciar sesion con Google. Intenta nuevamente."
-        );
+        setGlobalError(result.error || AUTH_FEEDBACK_MESSAGES.googleError);
       }
     } catch {
-      setGlobalError(
-        "No se pudo iniciar sesion con Google. Intenta nuevamente."
-      );
+      setGlobalError(AUTH_FEEDBACK_MESSAGES.googleError);
     } finally {
       setGoogleLoading(false);
     }
@@ -160,27 +150,14 @@ export default function Home() {
   if (authLoading || isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <svg
-          className="animate-spin h-8 w-8 text-primary"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
+        <div className="w-full max-w-sm px-4">
+          <AuthFeedbackBanner
+            tone="info"
+            title="Cargando acceso"
+            message={AUTH_FEEDBACK_MESSAGES.authChecking}
+            description="Te redirigimos automaticamente si ya tienes una sesion activa."
           />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
+        </div>
       </div>
     );
   }
@@ -212,24 +189,24 @@ export default function Home() {
         </CardHeader>
 
         <CardContent>
-          {success && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="mb-4 rounded-lg bg-green-100 dark:bg-green-900/30 px-4 py-3 text-sm text-green-800 dark:text-green-300"
-            >
-              Sesion iniciada correctamente.
-            </div>
+          {loading && (
+            <AuthFeedbackBanner
+              tone="info"
+              title="Validando credenciales"
+              message={AUTH_FEEDBACK_MESSAGES.credentialsLoading}
+              description="Mantenemos el feedback minimo mientras el servidor confirma el acceso."
+              className="mb-4"
+            />
           )}
 
           {resolvedGlobalError && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="mb-4 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive"
-            >
-              {resolvedGlobalError}
-            </div>
+            <AuthFeedbackBanner
+              tone="error"
+              title="No se pudo iniciar sesion"
+              message={resolvedGlobalError}
+              description="Verifica tus datos o intenta nuevamente."
+              className="mb-4"
+            />
           )}
 
           <form
@@ -315,30 +292,9 @@ export default function Home() {
               aria-busy={loading}
             >
               {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Cargando...
-                </span>
+              <LoadingButtonContent
+                label={AUTH_FEEDBACK_MESSAGES.credentialsLoading}
+              />
               ) : (
                 "Iniciar sesion con correo"
               )}
@@ -372,32 +328,11 @@ export default function Home() {
               aria-busy={googleLoading || providersLoading}
             >
               {googleLoading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Conectando...
-                </span>
+                <LoadingButtonContent
+                  label={AUTH_FEEDBACK_MESSAGES.googleLoading}
+                />
               ) : providersLoading ? (
-                "Verificando Google..."
+                AUTH_FEEDBACK_MESSAGES.providersLoading
               ) : !googleProviderEnabled ? (
                 "Google no disponible"
               ) : (

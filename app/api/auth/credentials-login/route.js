@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AUTH_REDIRECT_ERROR_CODES } from "@/lib/auth/feedback";
 import { createAuthJsSessionForUser } from "@/lib/server/auth-session";
 import { logError, logInfo, logWarn } from "@/lib/server/logger";
 import { validateCredentials } from "@/lib/server/validation";
@@ -29,7 +30,9 @@ export async function POST(request) {
       email,
     });
     return NextResponse.redirect(
-      buildRedirectUrl(request.url, "/", { error: "CredentialsSignin" })
+      buildRedirectUrl(request.url, "/", {
+        error: AUTH_REDIRECT_ERROR_CODES.credentials,
+      })
     );
   }
 
@@ -42,7 +45,9 @@ export async function POST(request) {
         status: authResult.error?.status ?? null,
       });
       return NextResponse.redirect(
-        buildRedirectUrl(request.url, "/", { error: "CredentialsSignin" })
+        buildRedirectUrl(request.url, "/", {
+          error: AUTH_REDIRECT_ERROR_CODES.credentials,
+        })
       );
     }
 
@@ -56,7 +61,9 @@ export async function POST(request) {
         userId: user.id,
       });
       return NextResponse.redirect(
-        buildRedirectUrl(request.url, "/", { error: "Configuration" })
+        buildRedirectUrl(request.url, "/", {
+          error: AUTH_REDIRECT_ERROR_CODES.configuration,
+        })
       );
     }
 
@@ -75,7 +82,9 @@ export async function POST(request) {
       message: error instanceof Error ? error.message : "Error desconocido",
     });
     return NextResponse.redirect(
-      buildRedirectUrl(request.url, "/", { error: "Configuration" })
+      buildRedirectUrl(request.url, "/", {
+        error: AUTH_REDIRECT_ERROR_CODES.configuration,
+      })
     );
   }
 }
