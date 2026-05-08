@@ -27,6 +27,7 @@
     "validate:ticket-16": "node scripts/validate-ticket-16.mjs",
     "validate:ticket-17": "node scripts/validate-ticket-17.mjs",
     "validate:ticket-18": "node scripts/validate-ticket-18.mjs",
+    "validate:ticket-19": "node scripts/validate-ticket-19.mjs",
     "seed:test-cliente": "tsx scripts/create-test-cliente-user.ts",
     "seed:test-auth-users": "tsx scripts/create-test-auth-users.ts",
     "test:email:unit": "tsx scripts/test-email-brevo-unit.ts",
@@ -62,7 +63,9 @@
     "test:ticket-15:full": "pnpm test:ticket-15 && pnpm test:email",
     "test:ticket-16": "pnpm validate:ticket-16",
     "test:ticket-17": "pnpm validate:ticket-17",
-    "test:ticket-18": "pnpm validate:ticket-18 && node scripts/test-ticket-18-functional.mjs"
+    "test:ticket-18": "pnpm validate:ticket-18 && node scripts/test-ticket-18-functional.mjs",
+    "test:ticket-19:e2e": "playwright test e2e/ticket-19-bdd-validation.spec.ts --project=chromium --workers=1",
+    "test:ticket-19": "pnpm seed:test-auth-users && pnpm validate:ticket-19 && pnpm test:ticket-19:e2e"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
