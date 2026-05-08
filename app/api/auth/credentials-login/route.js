@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { createAuthJsSessionForUser } from "@/lib/server/auth-session";
 import { logError, logInfo, logWarn } from "@/lib/server/logger";
 import { validateCredentials } from "@/lib/server/validation";
-import { getUsuarioByEmailForAuth } from "@/lib/server/usuario";
+import { authenticateUserWithCredentials } from "@/lib/server/credentials";
 
 function buildRedirectUrl(requestUrl, path, params = {}) {
   const url = new URL(path, requestUrl);
@@ -35,36 +34,26 @@ export async function POST(request) {
   }
 
   try {
-    const userResult = await getUsuarioByEmailForAuth(email);
-    if (!userResult.ok || !userResult.data?.passwordHash) {
-      logWarn("credentials-login: usuario no disponible para credenciales", {
+    const authResult = await authenticateUserWithCredentials(email, password);
+    if (!authResult.ok) {
+      logWarn("credentials-login: autenticacion rechazada", {
         action: "credentials-login",
         email,
-        status: userResult.error?.status ?? null,
+        status: authResult.error?.status ?? null,
       });
       return NextResponse.redirect(
         buildRedirectUrl(request.url, "/", { error: "CredentialsSignin" })
       );
     }
 
-    const passwordMatches = await bcrypt.compare(password, userResult.data.passwordHash);
-    if (!passwordMatches) {
-      logWarn("credentials-login: password incorrecta", {
-        action: "credentials-login",
-        email,
-        userId: userResult.data.id,
-      });
-      return NextResponse.redirect(
-        buildRedirectUrl(request.url, "/", { error: "CredentialsSignin" })
-      );
-    }
+    const user = authResult.data;
 
-    const sessionResult = await createAuthJsSessionForUser(userResult.data.id);
+    const sessionResult = await createAuthJsSessionForUser(user.id);
     if (!sessionResult.ok) {
       logError("credentials-login: no se pudo crear la sesion", {
         action: "credentials-login",
         email,
-        userId: userResult.data.id,
+        userId: user.id,
       });
       return NextResponse.redirect(
         buildRedirectUrl(request.url, "/", { error: "Configuration" })
@@ -74,7 +63,7 @@ export async function POST(request) {
     logInfo("credentials-login: sesion creada correctamente", {
       action: "credentials-login",
       email,
-      userId: userResult.data.id,
+      userId: user.id,
       callbackUrl,
     });
 
