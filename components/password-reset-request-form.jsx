@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { AlertCircle, ArrowLeft, Loader2, MailCheck, Send } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import { requestPasswordResetAction } from "@/lib/actions/password-reset";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { AuthFeedbackBanner } from "@/components/auth-feedback-banner";
 import {
   Card,
   CardContent,
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingButtonContent } from "@/components/loading-button-content";
+import { AUTH_FEEDBACK_MESSAGES } from "@/lib/auth/feedback";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FALLBACK_SUCCESS_MESSAGE =
@@ -67,7 +69,7 @@ export function PasswordResetRequestForm() {
           return;
         }
 
-        setGlobalError("No se pudo procesar la solicitud. Intenta nuevamente.");
+        setGlobalError(AUTH_FEEDBACK_MESSAGES.passwordResetRequestError);
         return;
       }
 
@@ -88,29 +90,25 @@ export function PasswordResetRequestForm() {
 
       <CardContent className="space-y-4">
         {successMessage && (
-          <Alert>
-            <MailCheck className="h-4 w-4 text-primary" aria-hidden="true" />
-            <AlertTitle>Solicitud registrada</AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>{successMessage}</p>
-              <p className="text-xs text-muted-foreground">
-                Revisa tambien spam o promociones si no lo ves en tu bandeja.
-              </p>
-              {submittedEmail && (
-                <p className="text-xs text-muted-foreground">
-                  Correo ingresado: {submittedEmail}
-                </p>
-              )}
-            </AlertDescription>
-          </Alert>
+          <AuthFeedbackBanner
+            tone="success"
+            title="Solicitud registrada"
+            message={successMessage}
+            description={
+              submittedEmail
+                ? `Revisa spam o promociones si no lo ves pronto. Correo ingresado: ${submittedEmail}`
+                : "Revisa tambien spam o promociones si no lo ves en tu bandeja."
+            }
+          />
         )}
 
         {globalError && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" aria-hidden="true" />
-            <AlertTitle>No se pudo continuar</AlertTitle>
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
+          <AuthFeedbackBanner
+            tone="error"
+            title="No se pudo continuar"
+            message={globalError}
+            description="Intenta nuevamente en unos segundos."
+          />
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -150,10 +148,9 @@ export function PasswordResetRequestForm() {
             aria-busy={isPending}
           >
             {isPending ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Enviando enlace...
-              </span>
+            <LoadingButtonContent
+              label={AUTH_FEEDBACK_MESSAGES.passwordResetRequestLoading}
+            />
             ) : (
               <span className="flex items-center gap-2">
                 <Send className="h-4 w-4" aria-hidden="true" />
