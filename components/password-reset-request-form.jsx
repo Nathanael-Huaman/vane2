@@ -19,6 +19,8 @@ import { Label } from "@/components/ui/label";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FALLBACK_SUCCESS_MESSAGE =
   "Si existe una cuenta asociada a ese correo, enviaremos un enlace de recuperacion en unos minutos.";
+const SECURITY_NEUTRAL_NOTE =
+  "Por seguridad, mostraremos la misma confirmacion aunque el correo no exista en el sistema o el flujo entre en enfriamiento futuro.";
 
 function validateEmail(value) {
   const normalized = value.trim().toLowerCase();
@@ -162,8 +164,7 @@ export function PasswordResetRequestForm() {
         </form>
 
         <div className="rounded-lg border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-          Por seguridad, mostraremos la misma confirmacion aunque el correo no
-          exista en el sistema.
+          {SECURITY_NEUTRAL_NOTE}
         </div>
 
         <Link
