@@ -18,8 +18,12 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import {
   PASSWORD_RESET_SUCCESS_MESSAGE,
+  issuePasswordResetForUser,
   requestPasswordReset,
+  resetPasswordWithToken,
+  validatePasswordResetToken,
 } from "../lib/server/password-reset.js";
+import { authenticateUserWithCredentials } from "../lib/server/credentials.js";
 
 const TEST_CLIENTE_EMAIL = (
   process.env.TEST_CLIENTE_EMAIL || "cliente.prueba@obstedesign.local"
@@ -27,6 +31,7 @@ const TEST_CLIENTE_EMAIL = (
   .trim()
   .toLowerCase();
 const UNKNOWN_EMAIL = "no.existe@obstedesign.local";
+const TEST_NEW_PASSWORD = "Cliente123!Reset";
 
 let passed = 0;
 let failed = 0;
@@ -68,6 +73,7 @@ async function successfulEmailSender() {
 async function main() {
   const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
   const prisma = new PrismaClient({ adapter: createAdapter(databaseUrl) });
+  let originalPasswordHash: string | null | undefined;
 
   try {
     section("1. Validacion de entrada");
@@ -136,7 +142,60 @@ async function main() {
       Boolean(firstToken && secondToken) && firstToken!.token !== secondToken!.token
     );
 
-    section("3. Confirmacion neutra para correo inexistente");
+    section("3. Consumo real del enlace y login con nueva contrasena");
+    const currentUser = await prisma.usuario.findUnique({
+      where: { email: TEST_CLIENTE_EMAIL },
+    });
+
+    if (!currentUser) {
+      throw new Error(`Usuario de prueba no encontrado para ${TEST_CLIENTE_EMAIL}`);
+    }
+
+    originalPasswordHash = currentUser.passwordHash;
+    const issueResult = await issuePasswordResetForUser(currentUser, {
+      baseUrl: "http://localhost:3000",
+      emailSender: successfulEmailSender,
+    });
+
+    assert("emision directa del enlace retorna exito", issueResult.ok === true);
+
+    const resetUrl = issueResult.ok ? new URL(issueResult.data.resetUrl) : null;
+    const resetToken = resetUrl?.searchParams.get("token") || "";
+
+    const tokenValidation = await validatePasswordResetToken(
+      TEST_CLIENTE_EMAIL,
+      resetToken
+    );
+
+    assert("token emitido queda validado", tokenValidation.ok === true);
+
+    const resetResult = await resetPasswordWithToken({
+      email: TEST_CLIENTE_EMAIL,
+      token: resetToken,
+      password: TEST_NEW_PASSWORD,
+    });
+
+    assert("restablecer contrasena retorna exito", resetResult.ok === true);
+
+    const consumedToken = await validatePasswordResetToken(
+      TEST_CLIENTE_EMAIL,
+      resetToken
+    );
+    assert("token deja de ser valido tras uso", consumedToken.ok === false);
+
+    const loginResult = await authenticateUserWithCredentials(
+      TEST_CLIENTE_EMAIL,
+      TEST_NEW_PASSWORD
+    );
+    assert("nueva contrasena permite login", loginResult.ok === true);
+
+    const oldPasswordResult = await authenticateUserWithCredentials(
+      TEST_CLIENTE_EMAIL,
+      process.env.TEST_CLIENTE_PASSWORD || "Cliente123!"
+    );
+    assert("password anterior deja de funcionar", oldPasswordResult.ok === false);
+
+    section("4. Confirmacion neutra para correo inexistente");
     const unknownResult = await requestPasswordReset(UNKNOWN_EMAIL, {
       baseUrl: "http://localhost:3000",
       emailSender: successfulEmailSender,
@@ -158,6 +217,12 @@ async function main() {
       unknownToken === null
     );
   } finally {
+    if (originalPasswordHash !== undefined) {
+      await prisma.usuario.update({
+        where: { email: TEST_CLIENTE_EMAIL },
+        data: { passwordHash: originalPasswordHash },
+      });
+    }
     await prisma.verificationToken.deleteMany({
       where: { identifier: { in: [TEST_CLIENTE_EMAIL, UNKNOWN_EMAIL] } },
     });

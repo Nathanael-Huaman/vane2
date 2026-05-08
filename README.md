@@ -58,3 +58,13 @@ Pruebas especificas del servicio de email Brevo:
 pnpm test:email:unit
 pnpm test:email:integration
 ```
+
+Verificacion real del flujo para un usuario especifico:
+
+```bash
+VERIFY_PASSWORD_RESET_EMAIL="nathaexp2025@gmail.com" \
+VERIFY_PASSWORD_RESET_NEW_PASSWORD="Cliente123!" \
+pnpm verify:password-reset:user
+```
+
+El proceso genera un reporte JSON en `reports/` con el estado de cada paso.

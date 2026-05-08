@@ -38,6 +38,7 @@
     "test:email:unit": "tsx scripts/test-email-brevo-unit.ts",
     "test:email:integration": "pnpm seed:test-auth-users && tsx scripts/test-email-brevo-integration.ts",
     "test:email": "pnpm test:email:unit && pnpm test:email:integration",
+    "verify:password-reset:user": "tsx scripts/verify-password-reset-user.ts",
     "test:ticket-08:runtime": "tsx scripts/test-ticket-08-runtime.ts",
     "test:ticket-08:e2e": "playwright test e2e/ticket-08-login-credentials.spec.ts --project=chromium",
     "test:ticket-08": "pnpm validate:ticket-08 && pnpm test:ticket-08:runtime",

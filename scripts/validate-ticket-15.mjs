@@ -34,6 +34,7 @@ const requiredFiles = [
   "app/recuperar-contrasena/page.js",
   "app/restablecer-contrasena/page.js",
   "components/password-reset-request-form.jsx",
+  "components/password-reset-confirm-form.jsx",
   "lib/actions/password-reset.js",
   "lib/server/password-reset.js",
   "lib/server/mailer.js",
@@ -52,12 +53,20 @@ const recoveryForm = readFileSync(
   join(rootDir, "components/password-reset-request-form.jsx"),
   "utf-8"
 );
+const resetConfirmForm = readFileSync(
+  join(rootDir, "components/password-reset-confirm-form.jsx"),
+  "utf-8"
+);
 const action = readFileSync(join(rootDir, "lib/actions/password-reset.js"), "utf-8");
 const serverReset = readFileSync(
   join(rootDir, "lib/server/password-reset.js"),
   "utf-8"
 );
 const mailer = readFileSync(join(rootDir, "lib/server/mailer.js"), "utf-8");
+const resetPage = readFileSync(
+  join(rootDir, "app/restablecer-contrasena/page.js"),
+  "utf-8"
+);
 
 section("2. Acceso visual desde login");
 
@@ -68,6 +77,10 @@ assert(
 assert(
   "pagina renderiza el formulario real de recuperacion",
   recoveryPage.includes("<PasswordResetRequestForm />")
+);
+assert(
+  "pantalla de restablecimiento valida el token",
+  resetPage.includes("validatePasswordResetToken")
 );
 
 section("3. Flujo del formulario");
@@ -85,6 +98,10 @@ assert(
   recoveryForm.includes(
     "Si existe una cuenta asociada a ese correo, enviaremos un enlace de recuperacion en unos minutos."
   )
+);
+assert(
+  "formulario de restablecimiento consume la server action",
+  resetConfirmForm.includes("resetPasswordWithTokenAction")
 );
 
 section("4. Logica backend");
@@ -108,6 +125,14 @@ assert(
 assert(
   "server emite token aleatorio seguro",
   serverReset.includes('randomBytes(32).toString("hex")')
+);
+assert(
+  "server valida el token antes de actualizar password",
+  serverReset.includes("export async function validatePasswordResetToken")
+);
+assert(
+  "server permite restablecer password con token",
+  serverReset.includes("export async function resetPasswordWithToken")
 );
 
 section("5. Transporte de email");
