@@ -1,24 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Menu, X, ShoppingBag, Home, LayoutDashboard } from "lucide-react";
-import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { AuthButtons } from "@/components/auth-buttons";
 import { UserMenu } from "@/components/user-menu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { VIEW_MODE_ADMINISTRADOR } from "@/lib/types";
 
 const baseNavLinks = [
@@ -34,7 +25,6 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const { user, loading: authLoading, isAdmin } = useAuth();
   const { viewMode, loading: viewModeLoading } = useViewMode();
 
@@ -45,6 +35,19 @@ export function Navbar() {
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -66,6 +69,17 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   if (!isMounted) {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -83,11 +97,16 @@ export function Navbar() {
       const Icon = link.icon;
       const isActive = pathname === link.href;
       return (
-        <Link key={link.href} href={link.href}>
+        <Link
+          key={link.href}
+          href={link.href}
+          className="block"
+        >
           <Button
             variant={isActive ? "secondary" : "ghost"}
             size="sm"
             className={`gap-2 ${isMobile ? "w-full justify-start" : ""}`}
+            onClick={() => isMobile && setIsOpen(false)}
           >
             <Icon className="h-4 w-4" />
             {link.label}
@@ -98,8 +117,8 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" role="banner">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8" role="navigation" aria-label="Navegacion principal">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tight text-primary">
@@ -113,13 +132,15 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          {isLoading ? (
-            <Skeleton className="h-9 w-24" />
-          ) : user ? (
-            <UserMenu currentViewMode={viewMode} />
-          ) : (
-            <AuthButtons />
-          )}
+          <div className="hidden md:block">
+            {isLoading ? (
+              <Skeleton className="h-9 w-24" />
+            ) : user ? (
+              <UserMenu currentViewMode={viewMode} />
+            ) : (
+              <AuthButtons />
+            )}
+          </div>
 
           <button
             id="hamburger-button"
@@ -127,12 +148,13 @@ export function Navbar() {
             className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
             onClick={() => setIsOpen(!isOpen)}
             aria-expanded={isOpen}
-            aria-label={isOpen ? "Cerrar menu" : "Abrir menu"}
+            aria-controls="mobile-menu"
+            aria-label={isOpen ? "Cerrar menu de navegacion" : "Abrir menu de navegacion"}
           >
             {isOpen ? (
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" aria-hidden="true" />
             ) : (
-              <Menu className="h-5 w-5" />
+              <Menu className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
         </div>
@@ -140,23 +162,56 @@ export function Navbar() {
 
       <div
         id="mobile-menu"
-        className={`md:hidden overflow-hidden transition-all duration-200 ease-in-out ${
-          isOpen ? "max-h-96 border-b" : "max-h-0"
+        className={`md:hidden overflow-hidden transition-all duration-200 ease-out ${
+          isOpen ? "max-h-screen border-b" : "max-h-0"
         }`}
+        aria-hidden={!isOpen}
       >
-        <div className="space-y-1 px-4 py-2">
-          {renderNavLinks(navLinks, true)}
-          <div className="pt-2">
-            {isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : user ? (
-              <UserMenu currentViewMode={viewMode} />
-            ) : (
-              <AuthButtons />
-            )}
+        {isOpen && (
+          <div className="absolute inset-x-0 top-16 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="max-w-7xl px-4 py-4 space-y-1">
+              {renderNavLinks(navLinks, true)}
+              <div className="pt-3 border-t mt-3">
+                {isLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : user ? (
+                  <UserMenu currentViewMode={viewMode} />
+                ) : (
+                  <div className="space-y-2">
+                    <Link href="/" className="block">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Iniciar sesion
+                      </Button>
+                    </Link>
+                    <Link href="/registro" className="block">
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Registrarse
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {isOpen && (
+        <div
+          className="fixed inset-0 top-16 z-30 bg-black/50 md:hidden"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
     </header>
   );
 }
