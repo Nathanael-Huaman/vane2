@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import {
@@ -9,8 +13,58 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AuthFeedbackBanner } from "@/components/auth-feedback-banner";
+import { LoadingButtonContent } from "@/components/loading-button-content";
 
 export default function RegistroConfirmacionPage() {
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [feedback, setFeedback] = useState({ tone: "success", message: "" });
+
+  async function handleResend() {
+    if (!email) {
+      setFeedback({
+        tone: "error",
+        message: "No pudimos identificar tu correo. Vuelve a registrarte o inicia sesion.",
+      });
+      return;
+    }
+
+    setFeedback({ tone: "success", message: "" });
+    setResendLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/reenviar-verificacion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setFeedback({
+          tone: "error",
+          message: data?.error || "No se pudo reenviar el correo. Intenta nuevamente.",
+        });
+        return;
+      }
+
+      setFeedback({
+        tone: "success",
+        message: "Te enviamos un nuevo correo de verificacion.",
+      });
+    } catch {
+      setFeedback({
+        tone: "error",
+        message: "No se pudo reenviar el correo. Intenta nuevamente.",
+      });
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
       <div className="absolute top-4 right-4">
@@ -31,22 +85,43 @@ export default function RegistroConfirmacionPage() {
               aria-hidden="true"
             />
           </div>
-          <CardTitle>Revisa tu correo</CardTitle>
+          <CardTitle>¡Cuenta creada con exito!</CardTitle>
           <CardDescription>
-            Te enviamos un enlace para verificar tu cuenta.
+            Te enviamos un correo para verificar tu direccion. Puedes hacerlo cuando quieras.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            Haz clic en el enlace del correo que te enviamos para activar tu
-            cuenta. Revisa tambien la carpeta de spam si no lo encuentras en tu
-            bandeja principal.
-          </p>
+          {feedback.message ? (
+            <AuthFeedbackBanner
+              tone={feedback.tone}
+              message={feedback.message}
+              className="text-left"
+            />
+          ) : null}
 
           <Button variant="outline" className="w-full" asChild>
-            <Link href="/">Volver al inicio de sesion</Link>
+            <Link href="/login">Ir al inicio de sesion</Link>
           </Button>
+
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              ¿No recibiste el correo?
+            </p>
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0"
+              onClick={handleResend}
+              disabled={resendLoading}
+            >
+              {resendLoading ? (
+                <LoadingButtonContent label="Reenviando" />
+              ) : (
+                "Reenviar"
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

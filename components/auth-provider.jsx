@@ -36,6 +36,7 @@ function AuthStateProvider({ children }) {
             id: user.id,
             email: user.email,
             role: user.role,
+            emailVerificado: user.emailVerificado ?? false,
             createdAt: null,
             updatedAt: null,
           }
