@@ -40,6 +40,7 @@
     "validate:ticket-24": "node scripts/validate-ticket-24.mjs",
     "validate:ticket-25": "node scripts/validate-ticket-25.mjs",
     "validate:ticket-26": "node scripts/validate-ticket-26.mjs",
+    "validate:ticket-27": "node scripts/validate-ticket-27.mjs",
     "seed:test-cliente": "tsx scripts/create-test-cliente-user.ts",
     "seed:test-auth-users": "tsx scripts/create-test-auth-users.ts",
     "test:email:unit": "tsx scripts/test-email-brevo-unit.ts",
