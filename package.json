@@ -37,6 +37,8 @@
     "validate:ticket-17": "node scripts/validate-ticket-17.mjs",
     "validate:ticket-18": "node scripts/validate-ticket-18.mjs",
     "validate:ticket-19": "node scripts/validate-ticket-19.mjs",
+    "validate:ticket-24": "node scripts/validate-ticket-24.mjs",
+    "validate:ticket-25": "node scripts/validate-ticket-25.mjs",
     "seed:test-cliente": "tsx scripts/create-test-cliente-user.ts",
     "seed:test-auth-users": "tsx scripts/create-test-auth-users.ts",
     "test:email:unit": "tsx scripts/test-email-brevo-unit.ts",
