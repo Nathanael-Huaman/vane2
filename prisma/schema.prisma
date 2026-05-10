@@ -18,15 +18,18 @@ datasource db {
 }
 
 model Usuario {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String?
-  name          String?
-  image         String?
-  emailVerified DateTime?
-  role          Role      @default(cliente)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                      String    @id @default(cuid())
+  email                   String    @unique
+  passwordHash            String?
+  name                    String?
+  image                   String?
+  emailVerified           DateTime?
+  role                    Role      @default(cliente)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  emailVerificado         Boolean   @default(false)
+  tokenVerificacion       String?
+  tokenVerificacionExpira DateTime?
 
   sesiones Sesion[]
   cuentas  Account[]
