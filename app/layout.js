@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./providers";
 import { AuthProvider } from "@/components/auth-provider";
+import { EmailVerificationWarningBanner } from "@/components/email-verification-warning-banner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange={false}
         >
           <AuthProvider>
+            <EmailVerificationWarningBanner />
             {children}
           </AuthProvider>
         </ThemeProvider>

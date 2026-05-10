@@ -118,7 +118,9 @@ export default function RegistroPage() {
       });
 
       if (res.status === 201) {
-        router.push("/registro/confirmacion");
+        router.push(
+          `/registro/confirmacion?email=${encodeURIComponent(normalizedData.email)}`
+        );
         return;
       }
 

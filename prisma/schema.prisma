@@ -31,8 +31,9 @@ model Usuario {
   tokenVerificacion       String?
   tokenVerificacionExpira DateTime?
 
-  sesiones Sesion[]
-  cuentas  Account[]
+  sesiones                        Sesion[]
+  cuentas                         Account[]
+  emailVerificationResendAttempts EmailVerificationResendAttempt[]
 
   @@map("usuarios")
 }
@@ -80,4 +81,15 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("tokens_verificacion")
+}
+
+model EmailVerificationResendAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("email_verification_resend_attempts")
 }
