@@ -7,7 +7,7 @@ export function AuthButtons() {
   return (
     <div className="flex items-center gap-2">
       <Link href="/">
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" className="hover:bg-primary/10">
           Iniciar sesion
         </Button>
       </Link>

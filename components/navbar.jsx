@@ -112,7 +112,7 @@ export function Navbar() {
           <Button
             variant={isActive ? "secondary" : "ghost"}
             size="sm"
-            className={`gap-2 ${isMobile ? "w-full justify-start" : ""}`}
+            className={`gap-2 hover:bg-primary/10 ${isMobile ? "w-full justify-start" : ""}`}
             onClick={() => isMobile && setIsOpen(false)}
           >
             <Icon className="h-4 w-4" />
@@ -152,7 +152,7 @@ export function Navbar() {
           <button
             id="hamburger-button"
             type="button"
-            className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+            className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
             onClick={() => setIsOpen(!isOpen)}
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
@@ -189,7 +189,7 @@ export function Navbar() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full"
+                        className="w-full hover:bg-primary/10"
                         onClick={() => setIsOpen(false)}
                       >
                         Iniciar sesion
@@ -198,7 +198,7 @@ export function Navbar() {
                     <Link href="/registro" className="block">
                       <Button
                         size="sm"
-                        className="w-full"
+                        className="w-full hover:bg-primary/10"
                         onClick={() => setIsOpen(false)}
                       >
                         Registrarse
