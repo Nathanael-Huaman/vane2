@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore, startTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ShoppingBag, Home, LayoutDashboard } from "lucide-react";
@@ -23,18 +23,25 @@ const adminNavLinks = [
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const { user, loading: authLoading, isAdmin } = useAuth();
   const { viewMode, loading: viewModeLoading } = useViewMode();
 
-  useEffect(() => {
-    setIsMounted(true);
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+
+  const closeMenu = useCallback(() => {
+    setIsOpen(false);
   }, []);
 
   useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
+    startTransition(() => {
+      closeMenu();
+    });
+  }, [pathname, closeMenu]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -82,7 +89,7 @@ export function Navbar() {
 
   if (!isMounted) {
     return (
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="h-16" />
       </header>
     );
@@ -117,7 +124,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" role="banner">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60" role="banner">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8" role="navigation" aria-label="Navegacion principal">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
@@ -168,7 +175,7 @@ export function Navbar() {
         aria-hidden={!isOpen}
       >
         {isOpen && (
-          <div className="absolute inset-x-0 top-16 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <div className="absolute inset-x-0 top-16 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
             <div className="max-w-7xl px-4 py-4 space-y-1">
               {renderNavLinks(navLinks, true)}
               <div className="pt-3 border-t mt-3">
