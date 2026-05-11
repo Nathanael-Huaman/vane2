@@ -46,39 +46,40 @@ export function EmailVerificationWarningBanner() {
   if (!shouldShow) return null;
 
   return (
-    <div className="w-full px-4 pt-4">
-      <Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-50">
-        <TriangleAlert className="h-4 w-4" aria-hidden="true" />
-        <AlertDescription className="space-y-1">
-          <p>Tu correo electronico no esta verificado.</p>
-          <Button
-            type="button"
-            variant="link"
-            className="h-auto p-0 text-amber-950 dark:text-amber-50"
-            onClick={handleResend}
-            disabled={loading}
-          >
-            {loading ? (
-              <LoadingButtonContent label="Reenviando verificacion" />
-            ) : (
-              "Reenviar verificacion"
-            )}
-          </Button>
-          {feedback ? <p className="text-xs text-muted-foreground">{feedback}</p> : null}
-        </AlertDescription>
-        <AlertAction>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setDismissed(true)}
-            aria-label="Cerrar"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </AlertAction>
-      </Alert>
+    <div className="px-8 pt-4">
+      <div className="mx-auto max-w-3xl">
+        <Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-50">
+          <TriangleAlert className="h-4 w-4" aria-hidden="true" />
+          <AlertDescription className="space-y-1">
+            <p>Tu correo electronico no esta verificado.</p>
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-amber-950 dark:text-amber-50"
+              onClick={handleResend}
+              disabled={loading}
+            >
+              {loading ? (
+                <LoadingButtonContent label="Reenviando verificacion" />
+              ) : (
+                "Reenviar verificacion"
+              )}
+            </Button>
+            {feedback ? <p className="text-xs text-muted-foreground">{feedback}</p> : null}
+          </AlertDescription>
+          <AlertAction>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setDismissed(true)}
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </AlertAction>
+        </Alert>
+      </div>
     </div>
   );
 }
-
