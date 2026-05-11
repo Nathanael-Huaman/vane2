@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -48,6 +48,7 @@ export function UserMenu({ currentViewMode }) {
     try {
       const result = await setCurrentViewMode(viewMode);
       if (result.ok) {
+        window.dispatchEvent(new Event("obste:viewmode"));
         router.refresh();
       }
     } finally {
@@ -97,7 +98,7 @@ export function UserMenu({ currentViewMode }) {
         </DropdownMenuItem>
         {isAdmin && currentViewMode === VIEW_MODE_CLIENTE && (
           <DropdownMenuItem
-            onClick={() => handleChangeViewMode(VIEW_MODE_ADMINISTRADOR)}
+            onSelect={() => handleChangeViewMode(VIEW_MODE_ADMINISTRADOR)}
             disabled={isChangingMode}
             className="cursor-pointer"
           >
@@ -107,7 +108,7 @@ export function UserMenu({ currentViewMode }) {
         )}
         {isAdmin && currentViewMode === VIEW_MODE_ADMINISTRADOR && (
           <DropdownMenuItem
-            onClick={() => handleChangeViewMode(VIEW_MODE_CLIENTE)}
+            onSelect={() => handleChangeViewMode(VIEW_MODE_CLIENTE)}
             disabled={isChangingMode}
             className="cursor-pointer"
           >
