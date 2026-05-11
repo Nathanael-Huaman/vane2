@@ -4,7 +4,7 @@ test.describe("Ticket 09 - Login con Google", () => {
   test("Google queda disponible en la pantalla de login", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByText("OBSTEDESIGN")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "OBSTEDESIGN" })).toBeVisible();
 
     const googleButton = page.getByRole("button", {
       name: /Iniciar sesion con Google/i,
