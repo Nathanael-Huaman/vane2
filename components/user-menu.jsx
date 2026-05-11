@@ -70,7 +70,7 @@ export function UserMenu({ currentViewMode }) {
         <Button
           variant="outline"
           size="sm"
-          className="gap-2"
+          className="gap-2 border-0 hover:bg-primary/10"
           aria-label="Menu de usuario"
         >
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
@@ -91,7 +91,7 @@ export function UserMenu({ currentViewMode }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/perfil" className="cursor-pointer">
+          <Link href="/perfil" className="cursor-pointer hover:bg-primary/10">
             <User className="mr-2 h-4 w-4" />
             Mi cuenta
           </Link>
@@ -100,7 +100,7 @@ export function UserMenu({ currentViewMode }) {
           <DropdownMenuItem
             onSelect={() => handleChangeViewMode(VIEW_MODE_ADMINISTRADOR)}
             disabled={isChangingMode}
-            className="cursor-pointer"
+            className="cursor-pointer hover:bg-primary/10"
           >
             <Settings className="mr-2 h-4 w-4" />
             {isChangingMode ? "Cambiando..." : "Cambiar a vista admin"}
@@ -110,7 +110,7 @@ export function UserMenu({ currentViewMode }) {
           <DropdownMenuItem
             onSelect={() => handleChangeViewMode(VIEW_MODE_CLIENTE)}
             disabled={isChangingMode}
-            className="cursor-pointer"
+            className="cursor-pointer hover:bg-primary/10"
           >
             <Settings className="mr-2 h-4 w-4" />
             {isChangingMode ? "Cambiando..." : "Cambiar a vista cliente"}
@@ -119,7 +119,7 @@ export function UserMenu({ currentViewMode }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}
-          className="cursor-pointer text-destructive focus:text-destructive"
+          className="cursor-pointer text-destructive focus:text-destructive hover:bg-primary/10"
         >
           <LogOut className="mr-2 h-4 w-4" />
           Cerrar sesion
