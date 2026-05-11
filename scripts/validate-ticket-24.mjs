@@ -49,7 +49,7 @@ assert(
   configContent.includes("allowDangerousEmailAccountLinking: true")
 );
 
-section("3. Callback signIn detecta colisiones con credenciales");
+section("3. Callback signIn maneja colisiones con credenciales");
 
 assert(
   "signIn callback verifica passwordHash existente",
@@ -57,13 +57,13 @@ assert(
 );
 
 assert(
-  "signIn retorna redirect cuando existe cuenta con credenciales",
-  configContent.includes("CredentialsAlreadyExist")
+  "signIn permite vinculacion cuando existe cuenta con credenciales",
+  configContent.includes("se permite vinculacion segura")
 );
 
 assert(
-  "signIn loguea advertencia cuando email ya tiene cuenta de credenciales",
-  configContent.includes("Google con email que ya tiene cuenta de credenciales")
+  "signIn no retorna redirect de colision para Google",
+  !configContent.includes('return "/?error=CredentialsAlreadyExist"')
 );
 
 assert(
