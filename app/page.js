@@ -275,7 +275,7 @@ export default function Home() {
               </label>
               <Link
                 href="/recuperar-contrasena"
-                className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+                className="text-sm text-primary underline underline-offset-4 hover:text-primary/80 cursor-pointer"
                 tabIndex={loading ? -1 : undefined}
                 aria-disabled={loading}
               >

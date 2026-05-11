@@ -113,7 +113,7 @@ export default async function RestablecerContrasenaPage({ searchParams }) {
 
           <Link
             href="/recuperar-contrasena"
-            className="inline-flex text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+            className="inline-flex text-sm text-primary underline underline-offset-4 hover:text-primary/80 cursor-pointer"
           >
             Solicitar otro enlace
           </Link>
