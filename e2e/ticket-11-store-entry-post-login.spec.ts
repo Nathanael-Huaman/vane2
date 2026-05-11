@@ -109,7 +109,9 @@ test.describe("Ticket 11 - Redireccionamiento y entrada a la tienda", () => {
     await page.goto("/tienda");
 
     await expect(page.getByText("Sesion no iniciada")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Iniciar sesion" })).toBeVisible();
+    await expect(
+      page.getByRole("main").getByRole("link", { name: "Iniciar sesion" })
+    ).toBeVisible();
     await expect(page.getByText("Opciones extra de administrador")).toHaveCount(0);
   });
 

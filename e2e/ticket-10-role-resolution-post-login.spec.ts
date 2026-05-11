@@ -116,7 +116,7 @@ test.describe("Ticket 10 - Resolucion de rol post-login", () => {
     await loginWithCredentials(page, TEST_CLIENTE_EMAIL, `${TEST_CLIENTE_PASSWORD}__bad`);
 
     await expect(page.getByText("Credenciales invalidas")).toBeVisible();
-    await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/\?error=CredentialsSignin/, { timeout: 15_000 });
   });
 
   test("mantiene integridad de rol tras cambio de usuario en la misma sesion de navegador", async ({
