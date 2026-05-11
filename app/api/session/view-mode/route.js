@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { VIEW_MODE_CLIENTE } from "@/lib/types";
+import { getCurrentPersistedSession } from "@/lib/server/auth-session";
 
 export async function GET() {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
+    const persistedSessionResult = await getCurrentPersistedSession();
+    if (!persistedSessionResult.ok) {
       return NextResponse.json({ viewMode: null });
     }
 
-    const viewMode = session.user.viewMode || VIEW_MODE_CLIENTE;
-
-    return NextResponse.json({ viewMode });
+    return NextResponse.json({
+      viewMode: persistedSessionResult.data.viewMode || VIEW_MODE_CLIENTE,
+    });
   } catch (error) {
     return NextResponse.json({ viewMode: VIEW_MODE_CLIENTE });
   }
