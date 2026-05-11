@@ -107,7 +107,7 @@ export function Navbar() {
         <Link
           key={link.href}
           href={link.href}
-          className="block"
+          className="block cursor-pointer"
         >
           <Button
             variant={isActive ? "secondary" : "ghost"}
@@ -127,7 +127,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60" role="banner">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8" role="navigation" aria-label="Navegacion principal">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 cursor-pointer">
             <span className="text-lg font-bold tracking-tight text-primary">
               OBSTEDESIGN
             </span>
@@ -185,7 +185,7 @@ export function Navbar() {
                   <UserMenu currentViewMode={viewMode} />
                 ) : (
                   <div className="space-y-2">
-                    <Link href="/" className="block">
+                    <Link href="/" className="block cursor-pointer">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -195,7 +195,7 @@ export function Navbar() {
                         Iniciar sesion
                       </Button>
                     </Link>
-                    <Link href="/registro" className="block">
+                    <Link href="/registro" className="block cursor-pointer">
                       <Button
                         size="sm"
                         className="w-full hover:bg-primary/10"

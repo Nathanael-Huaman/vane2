@@ -355,7 +355,7 @@ export default function RegistroPage() {
             ¿Ya tienes cuenta?{" "}
             <Link
               href="/"
-              className="text-primary underline underline-offset-4 hover:text-primary/80"
+              className="text-primary underline underline-offset-4 hover:text-primary/80 cursor-pointer"
             >
               Inicia sesion
             </Link>
