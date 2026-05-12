@@ -1,70 +1,181 @@
 # Frontend Obstedesign
 
-## Desarrollo
+## Proposito actual
 
-Ejecuta el proyecto con:
+Frontend Next.js 16 de Obstedesign enfocado en autenticacion y acceso:
+
+- login con credenciales en `/`
+- registro en `/registro`
+- login/registro con Google cuando el provider esta configurado
+- verificacion de email post-registro
+- recuperacion y restablecimiento de contrasena
+- resolucion de rol (`cliente` / `administrador`)
+- `viewMode` por sesion para que administradores alternen entre vista cliente y admin
+
+## Setup local
+
+1. Instalar dependencias:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Crear variables locales:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Preparar base local:
+
+   ```bash
+   pnpm prisma migrate dev
+   ```
+
+4. Crear usuarios de prueba:
+
+   ```bash
+   pnpm seed:test-auth-users
+   ```
+
+5. Levantar la app:
+
+   ```bash
+   pnpm dev
+   ```
+
+App local: `http://localhost:3000`
+
+## Variables de entorno
+
+### Requeridas
 
 ```bash
-pnpm dev
+DATABASE_URL="file:./dev.db"
+AUTH_SECRET="genera-un-secreto-largo-y-seguro"
+AUTH_URL="http://localhost:3000"
+APP_URL="http://localhost:3000"
 ```
 
-La app queda disponible en [http://localhost:3000](http://localhost:3000).
+### Google OAuth
 
-## Email Transaccional
+```bash
+AUTH_GOOGLE_ID="tu-google-client-id"
+AUTH_GOOGLE_SECRET="tu-google-client-secret"
+```
 
-El proyecto usa Brevo como proveedor de email transaccional a traves de su API HTTP.
+Si faltan, el boton de Google se muestra deshabilitado y Auth.js no registra el provider.
 
-Variables requeridas:
+### Email transaccional / Brevo
 
 ```bash
 BREVO_API_KEY="xkeysib-tu-api-key-de-brevo"
 EMAIL_FROM="noreply@obsedesign.com"
 EMAIL_FROM_NAME="Obstedesign"
-APP_URL="http://localhost:3000"
 ```
 
-Notas:
+- en produccion, Brevo debe estar configurado para envio real
+- en desarrollo, si Brevo no esta disponible, el flujo no se rompe: queda preview/log seguro
 
-- `BREVO_API_KEY` es obligatoria en produccion para enviar correos reales.
-- `EMAIL_FROM` debe existir y estar verificado en Brevo.
-- `EMAIL_FROM_NAME` es opcional, pero se recomienda para el remitente visible.
-- `APP_URL` se usa para construir enlaces absolutos de recuperacion; si falta, el sistema intenta usar `NEXTAUTH_URL` o `AUTH_URL`.
-- En desarrollo, si no configuras Brevo, el mailer deja una vista previa local en logs en lugar de fallar el flujo.
-
-## Cobertura Actual
-
-Hoy el unico flujo de email transaccional implementado en el repositorio es la recuperacion de contrasena.
-
-El servicio `sendTransactionalEmail()` ya queda preparado para:
-
-- correos HTML y texto plano
-- envio mediante plantillas de Brevo con `templateId`
-- parametros dinamicos con `params`
-- manejo de errores sanitizado y logs seguros
-
-No existen aun implementaciones activas de correos de registro ni de notificaciones dentro del proyecto actual; cuando se agreguen, deben reutilizar el mismo servicio de email.
-
-## Pruebas
-
-Validacion del flujo de recuperacion:
+### URL publica cliente
 
 ```bash
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+### Usuarios de prueba
+
+```bash
+TEST_CLIENTE_EMAIL="cliente.prueba@obstedesign.local"
+TEST_CLIENTE_PASSWORD="Cliente123!"
+TEST_ADMIN_EMAIL="admin.prueba@obstedesign.local"
+TEST_ADMIN_PASSWORD="Admin12345!"
+```
+
+### Variables de verificacion manual
+
+```bash
+VERIFY_PASSWORD_RESET_EMAIL="usuario@dominio.com"
+VERIFY_PASSWORD_RESET_NEW_PASSWORD="NuevaClave123!"
+VERIFY_PASSWORD_RESET_APP_URL="http://localhost:3000"
+VERIFY_PASSWORD_RESET_ALLOW_LOG_PREVIEW="1"
+```
+
+## Auth actual
+
+### Credenciales
+
+- el login principal vive en `/`
+- valida formato de email/password en cliente y servidor
+- Auth.js usa provider `credentials`
+- al autenticar, el rol real se resuelve desde BD
+
+### Google
+
+- usa Auth.js + Google provider
+- solo se habilita con `AUTH_GOOGLE_ID` y `AUTH_GOOGLE_SECRET`
+- exige email verificado por Google antes de permitir el acceso
+- si existe una cuenta previa por credenciales con el mismo email, permite linking seguro
+
+### Verificacion de email
+
+- el registro genera token de verificacion y envia correo
+- la confirmacion se consume en `/verificar-email`
+- existe reenvio de verificacion con limite por ventana
+
+### Recuperacion de contrasena
+
+- solicitud en `/recuperar-contrasena`
+- consumo del token en `/restablecer-contrasena`
+- respuesta publica neutra para no filtrar existencia de cuentas
+- el token se persiste hasheado y vence automaticamente
+
+## Roles y view mode
+
+- `cliente`: experiencia cliente fija
+- `administrador`: conserva rol admin real y puede alternar `viewMode`
+- `viewMode` se persiste por sesion; no cambia el rol real, solo la experiencia visible
+
+## Scripts principales
+
+### Desarrollo
+
+```bash
+pnpm dev
+pnpm build
+pnpm lint
+```
+
+### Seeds
+
+```bash
+pnpm seed:test-cliente
+pnpm seed:test-auth-users
+```
+
+### Validaciones agrupadas
+
+```bash
+pnpm test
+pnpm test:validation
+pnpm test:runtime
+pnpm test:e2e
+```
+
+### Tickets / checks utiles
+
+```bash
+pnpm test:ticket-08
+pnpm test:ticket-10
+pnpm test:ticket-11
 pnpm test:ticket-15
-```
-
-Pruebas especificas del servicio de email Brevo:
-
-```bash
+pnpm test:email
 pnpm test:email:unit
 pnpm test:email:integration
-```
-
-Verificacion real del flujo para un usuario especifico:
-
-```bash
-VERIFY_PASSWORD_RESET_EMAIL="nathaexp2025@gmail.com" \
-VERIFY_PASSWORD_RESET_NEW_PASSWORD="Cliente123!" \
 pnpm verify:password-reset:user
 ```
 
-El proceso genera un reporte JSON en `reports/` con el estado de cada paso.
+## Reportes generados
+
+- `reports/*.md` contiene documentacion viva de validacion
+- `reports/*.json` y `test-results/` son outputs generados y quedan ignorados por git

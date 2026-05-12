@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { VIEW_MODE_CLIENTE } from "@/lib/types";
-import { getCurrentPersistedSession } from "@/lib/server/auth-session";
+import { getCurrentPersistedSession } from "@/lib/server/auth";
 
 export async function GET() {
   try {

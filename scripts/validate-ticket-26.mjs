@@ -90,7 +90,11 @@ section("6. API route view-mode");
 
 const apiRouteContent = readFileSync(join(rootDir, "app/api/session/view-mode/route.js"), "utf-8");
 
-assert("API route usa auth()", apiRouteContent.includes("auth()"));
+assert(
+  "API route usa sesion autenticada",
+  apiRouteContent.includes("auth()") ||
+    apiRouteContent.includes("getCurrentPersistedSession")
+);
 assert("API route retorna viewMode", apiRouteContent.includes("viewMode"));
 assert("API route usa NextResponse", apiRouteContent.includes("NextResponse"));
 

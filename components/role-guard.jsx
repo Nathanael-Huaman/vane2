@@ -17,10 +17,12 @@ import { isRoleValid } from "@/lib/types";
  */
 export function RoleGuard({ children, allowedRoles, role, fallback = null }) {
   const authState = useContext(AuthContext);
+  const user = authState?.user;
   const resolvedRole = role ?? authState?.user?.role ?? null;
   const isLoading = role === undefined && authState?.loading;
 
   if (isLoading) return null;
+  if (user?.role && !isRoleValid(user.role)) return fallback;
   if (!resolvedRole) return fallback;
   if (!isRoleValid(resolvedRole)) return fallback;
   if (!allowedRoles.includes(resolvedRole)) return fallback;

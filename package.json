@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.19 <23",
+    "pnpm": ">=10 <12"
+  },
   "scripts": {
     "dev": "next dev",
     "predev": "prisma generate",
@@ -11,6 +15,10 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "lint": "eslint",
+    "test": "pnpm test:validation && pnpm test:runtime",
+    "test:validation": "pnpm validate:ticket-03 && pnpm validate:ticket-04 && pnpm validate:ticket-05 && pnpm validate:ticket-06 && pnpm validate:ticket-07 && pnpm validate:ticket-08 && pnpm validate:ticket-09 && pnpm validate:ticket-10 && pnpm validate:ticket-11 && pnpm validate:ticket-12 && pnpm validate:ticket-13 && pnpm validate:ticket-14 && pnpm validate:ticket-15 && pnpm validate:ticket-16 && pnpm validate:ticket-17 && pnpm validate:ticket-18 && pnpm validate:ticket-19 && pnpm validate:ticket-24 && pnpm validate:ticket-25 && pnpm validate:ticket-26 && pnpm validate:ticket-27",
+    "test:runtime": "pnpm seed:test-auth-users && pnpm test:ticket-08:runtime && pnpm test:ticket-10:runtime && pnpm test:ticket-11:runtime && pnpm test:ticket-15:runtime && pnpm test:email",
+    "test:e2e": "playwright test",
     "validate:ticket-03": "node scripts/validate-ticket-03.mjs",
     "validate:ticket-04": "node scripts/validate-ticket-04.mjs",
     "validate:ticket-05": "node scripts/validate-ticket-05.mjs",

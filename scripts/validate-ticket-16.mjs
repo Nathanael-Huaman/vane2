@@ -28,9 +28,21 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
+function resolveFirstExisting(paths) {
+  const found = paths.find((file) => existsSync(join(rootDir, file)));
+  return found || paths[0];
+}
+
 section("1. Estructura de seguridad complementaria");
 
-const securityFile = "lib/server/password-reset-security.js";
+const securityFile = resolveFirstExisting([
+  "lib/server/password/password-reset-security.js",
+  "lib/server/password-reset-security.js",
+]);
+const passwordResetFile = resolveFirstExisting([
+  "lib/server/password/password-reset.js",
+  "lib/server/password-reset.js",
+]);
 assert(
   `archivo existe: ${securityFile}`,
   existsSync(join(rootDir, securityFile))
@@ -38,7 +50,7 @@ assert(
 
 const securityModule = readFileSync(join(rootDir, securityFile), "utf-8");
 const passwordReset = readFileSync(
-  join(rootDir, "lib/server/password-reset.js"),
+  join(rootDir, passwordResetFile),
   "utf-8"
 );
 const requestForm = readFileSync(

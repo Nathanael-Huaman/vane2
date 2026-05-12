@@ -16,9 +16,7 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "../lib/generated/prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { createRuntimePrismaClient } from "../lib/testing/prisma-runtime";
 
 const SALT_ROUNDS = 12;
 const DEFAULT_CLIENTE = {
@@ -33,19 +31,6 @@ const DEFAULT_ADMIN = {
   name: "Admin Prueba",
   role: "administrador",
 };
-
-function createAdapter(databaseUrl: string) {
-  const lower = databaseUrl.toLowerCase();
-  if (lower.startsWith("postgres://") || lower.startsWith("postgresql://")) {
-    return new PrismaPg(new Pool({ connectionString: databaseUrl }));
-  }
-  if (lower.startsWith("file:") || lower.startsWith("libsql:")) {
-    return new PrismaLibSql({ url: databaseUrl });
-  }
-  throw new Error(
-    "DATABASE_URL no soportada. Usa file:/libsql: para SQLite o postgres:/postgresql: para PostgreSQL."
-  );
-}
 
 function validateUserInput(email: string, password: string, label: string) {
   if (!email.includes("@")) {
@@ -88,7 +73,6 @@ async function upsertUser(prisma: PrismaClient, user: {
 }
 
 async function main() {
-  const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
   const cliente = {
     email: (process.env.TEST_CLIENTE_EMAIL || DEFAULT_CLIENTE.email).trim().toLowerCase(),
     password: String(process.env.TEST_CLIENTE_PASSWORD || DEFAULT_CLIENTE.password),
@@ -105,7 +89,7 @@ async function main() {
   validateUserInput(cliente.email, cliente.password, "cliente");
   validateUserInput(admin.email, admin.password, "admin");
 
-  const prisma = new PrismaClient({ adapter: createAdapter(databaseUrl) });
+  const prisma: PrismaClient = createRuntimePrismaClient();
   try {
     const [clienteRecord, adminRecord] = await Promise.all([
       upsertUser(prisma, cliente),

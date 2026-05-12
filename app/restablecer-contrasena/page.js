@@ -12,7 +12,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   PASSWORD_RESET_INVALID_MESSAGE,
   validatePasswordResetToken,
-} from "@/lib/server/password-reset";
+} from "@/lib/server/password/password-reset";
 import { PasswordResetConfirmForm } from "@/components/password-reset-confirm-form";
 
 export default async function RestablecerContrasenaPage({ searchParams }) {

@@ -28,13 +28,27 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
+function resolveFirstExisting(paths) {
+  const found = paths.find((file) => existsSync(join(rootDir, file)));
+  return found || paths[0];
+}
+
 section("1. Componentes compartidos");
+
+const authResponseFile = resolveFirstExisting([
+  "lib/server/auth/auth-response.js",
+  "lib/server/auth-response.js",
+]);
+const credentialsFile = resolveFirstExisting([
+  "lib/server/auth/credentials.js",
+  "lib/server/credentials.js",
+]);
 
 const sharedFiles = [
   "components/auth-feedback-banner.jsx",
   "components/loading-button-content.jsx",
   "lib/auth/feedback.js",
-  "lib/server/auth-response.js",
+  authResponseFile,
 ];
 
 for (const file of sharedFiles) {
@@ -44,7 +58,7 @@ for (const file of sharedFiles) {
 const home = readFileSync(join(rootDir, "app/page.js"), "utf-8");
 const authClient = readFileSync(join(rootDir, "lib/auth/auth-client.js"), "utf-8");
 const credentials = readFileSync(
-  join(rootDir, "lib/server/credentials.js"),
+  join(rootDir, credentialsFile),
   "utf-8"
 );
 const resetRequest = readFileSync(

@@ -101,7 +101,7 @@ export default function RegistroConfirmacionPage() {
           ) : null}
 
           <Button variant="outline" className="w-full" asChild>
-            <Link href="/login">Ir al inicio de sesion</Link>
+            <Link href="/">Ir al inicio de sesion</Link>
           </Button>
 
           <div className="space-y-2">
