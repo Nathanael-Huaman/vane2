@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { AUTH_REDIRECT_ERROR_CODES } from "@/lib/auth/feedback";
-import { createAuthJsSessionForUser } from "@/lib/server/auth-session";
-import { logError, logInfo, logWarn } from "@/lib/server/logger";
-import { validateCredentials } from "@/lib/server/validation";
-import { authenticateUserWithCredentials } from "@/lib/server/credentials";
+import { createAuthJsSessionForUser, authenticateUserWithCredentials } from "@/lib/server/auth";
+import { logError, logInfo, logWarn, validateCredentials } from "@/lib/server/shared";
 
 function buildRedirectUrl(requestUrl, path, params = {}) {
   const url = new URL(path, requestUrl);

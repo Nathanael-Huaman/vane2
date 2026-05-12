@@ -12,10 +12,7 @@
 
 import "dotenv/config";
 import { randomBytes } from "node:crypto";
-import { PrismaClient } from "../lib/generated/prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { createRuntimePrismaClient } from "../lib/testing/prisma-runtime";
 
 const TEST_CLIENTE_EMAIL = (
   process.env.TEST_CLIENTE_EMAIL || "cliente.prueba@obstedesign.local"
@@ -44,22 +41,8 @@ function section(title: string) {
   console.log(`\n${title}`);
 }
 
-function createAdapter(databaseUrl: string) {
-  const lower = databaseUrl.toLowerCase();
-  if (lower.startsWith("postgres://") || lower.startsWith("postgresql://")) {
-    return new PrismaPg(new Pool({ connectionString: databaseUrl }));
-  }
-  if (lower.startsWith("file:") || lower.startsWith("libsql:")) {
-    return new PrismaLibSql({ url: databaseUrl });
-  }
-  throw new Error(
-    "DATABASE_URL no soportada. Usa file:/libsql: para SQLite o postgres:/postgresql: para PostgreSQL."
-  );
-}
-
 async function main() {
-  const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
-  const prisma = new PrismaClient({ adapter: createAdapter(databaseUrl) });
+  const prisma = createRuntimePrismaClient();
 
   const createdSessionIds: string[] = [];
 

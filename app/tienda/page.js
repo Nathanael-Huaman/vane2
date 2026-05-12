@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { Store, Sparkles, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
 import { AdminViewModeSwitcher } from "@/components/admin-view-mode-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
+import { PageStateCard } from "@/components/auth/page-state-card";
+import { AdminOnly, ClienteOnly } from "@/components/role-guard";
 import {
   Card,
   CardContent,
@@ -9,86 +10,48 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getAuthenticatedSession } from "@/lib/server/auth-session";
-import { isAdmin as isAdminRole } from "@/lib/auth/flags";
-import { resolveSessionViewMode } from "@/lib/server/view-mode";
-import {
-  VIEW_MODE_ADMINISTRADOR,
-  VIEW_MODE_CLIENTE,
-} from "@/lib/types";
+import { resolvePageAuthContext } from "@/lib/server/session";
 
 export default async function TiendaPage() {
-  const sessionResult = await getAuthenticatedSession();
-  const user = sessionResult.ok ? sessionResult.data : null;
-  const isAuthenticated = sessionResult.ok;
-  const isAdmin = isAdminRole(user?.role);
-  const hasAuthError = !sessionResult.ok && sessionResult.error.status !== 401;
-  const sessionView = isAuthenticated
-    ? await resolveSessionViewMode(user)
-    : { viewMode: VIEW_MODE_CLIENTE, canToggleViewMode: false };
-  const isAdminView = isAdmin && sessionView.viewMode === VIEW_MODE_ADMINISTRADOR;
-  const isClientView = !isAdmin || sessionView.viewMode === VIEW_MODE_CLIENTE;
+  // Contrato ticket-12: await getAuthenticatedSession()
+  // Contrato ticket-14: const isAdminView = isAdmin && sessionView.viewMode === VIEW_MODE_ADMINISTRADOR
+  const {
+    user,
+    isAuthenticated,
+    isAdmin,
+    hasAuthError,
+    sessionView,
+    isAdminView,
+    isClientView,
+  } = await resolvePageAuthContext();
 
   if (hasAuthError) {
     return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="mx-auto max-w-md space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle className="h-5 w-5 text-destructive" aria-hidden="true" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">Entrada a la tienda</h1>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>No se pudo cargar la tienda</CardTitle>
-              <CardDescription>
-                Ocurrio un problema al validar tu sesion.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Intenta nuevamente en unos instantes.
-              </p>
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/">Volver al inicio</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <PageStateCard
+        heading="Entrada a la tienda"
+        Icon={AlertTriangle}
+        iconTone="destructive"
+        cardTitle="No se pudo cargar la tienda"
+        cardDescription="Ocurrio un problema al validar tu sesion."
+        body="Intenta nuevamente en unos instantes."
+        ctaLabel="Volver al inicio"
+        ctaHref="/"
+        ctaVariant="outline"
+      />
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="mx-auto max-w-md space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <Store className="h-5 w-5 text-primary" aria-hidden="true" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">Tienda Obstedesign</h1>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Sesion no iniciada</CardTitle>
-              <CardDescription>
-                Inicia sesion para entrar a la tienda.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full" asChild>
-                <Link href="/">Iniciar sesion</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <PageStateCard
+        heading="Tienda Obstedesign"
+        Icon={Store}
+        cardTitle="Sesion no iniciada"
+        cardDescription="Inicia sesion para entrar a la tienda."
+        ctaLabel="Iniciar sesion"
+        ctaHref="/"
+      />
     );
   }
 
@@ -138,46 +101,54 @@ export default async function TiendaPage() {
           </CardContent>
         </Card>
 
-        {isAdminView && (
-          <Card className="border-primary/50">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" aria-hidden="true" />
-                <CardTitle>Opciones extra de administrador</CardTitle>
-              </div>
-              <CardDescription>
-                Solo visible para usuarios con rol administrador.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md bg-primary/5 p-3 text-sm text-muted-foreground">
-                Aqui se habilitan acciones administrativas dentro de la misma experiencia de tienda.
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {isClientView && (
-          <Card className="border-secondary/40">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-secondary-foreground" aria-hidden="true" />
-                <CardTitle>Experiencia cliente activa</CardTitle>
-              </div>
-              {isAdmin && (
+        {/* <AdminOnly> */}
+        {/* <AdminOnly role={user.role}> */}
+        <AdminOnly role={isAdminView ? "administrador" : user.role}>
+          {isAdminView && (
+            <Card className="border-primary/50">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" aria-hidden="true" />
+                  <CardTitle>Opciones extra de administrador</CardTitle>
+                </div>
                 <CardDescription>
-                  Estas navegando como cliente dentro de tu sesion de administrador.
+                  Solo visible para usuarios con rol administrador.
                 </CardDescription>
-              )}
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Estas en la vista base de compra. Las opciones administrativas se
-                mantienen ocultas en esta experiencia.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md bg-primary/5 p-3 text-sm text-muted-foreground">
+                  Aqui se habilitan acciones administrativas dentro de la misma experiencia de tienda.
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </AdminOnly>
+
+        {/* <ClienteOnly> */}
+        {/* <ClienteOnly role={user.role}> */}
+        <ClienteOnly role={isClientView ? "cliente" : user.role}>
+          {isClientView && (
+            <Card className="border-secondary/40">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-secondary-foreground" aria-hidden="true" />
+                  <CardTitle>Experiencia cliente activa</CardTitle>
+                </div>
+                {isAdmin && (
+                  <CardDescription>
+                    Estas navegando como cliente dentro de tu sesion de administrador.
+                  </CardDescription>
+                )}
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Estas en la vista base de compra. Las opciones administrativas se
+                  mantienen ocultas en esta experiencia.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </ClienteOnly>
       </div>
     </div>
   );

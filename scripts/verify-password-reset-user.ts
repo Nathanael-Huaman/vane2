@@ -18,16 +18,13 @@
 import "dotenv/config";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { PrismaClient } from "../lib/generated/prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { createRuntimePrismaClient } from "../lib/testing/prisma-runtime";
 import {
   issuePasswordResetForUser,
   resetPasswordWithToken,
   validatePasswordResetToken,
-} from "../lib/server/password-reset.js";
-import { authenticateUserWithCredentials } from "../lib/server/credentials.js";
+} from "../lib/server/password/password-reset.js";
+import { authenticateUserWithCredentials } from "../lib/server/auth/credentials.js";
 
 const targetEmail = (
   process.env.VERIFY_PASSWORD_RESET_EMAIL || "nathaexp2025@gmail.com"
@@ -54,19 +51,6 @@ const report = {
   status: "running",
   steps: [],
 };
-
-function createAdapter(databaseUrl: string) {
-  const lower = databaseUrl.toLowerCase();
-  if (lower.startsWith("postgres://") || lower.startsWith("postgresql://")) {
-    return new PrismaPg(new Pool({ connectionString: databaseUrl }));
-  }
-  if (lower.startsWith("file:") || lower.startsWith("libsql:")) {
-    return new PrismaLibSql({ url: databaseUrl });
-  }
-  throw new Error(
-    "DATABASE_URL no soportada. Usa file:/libsql: para SQLite o postgres:/postgresql: para PostgreSQL."
-  );
-}
 
 function logStep(name: string, status: "ok" | "error", details: Record<string, unknown>) {
   const entry = {
@@ -102,8 +86,7 @@ function saveReport() {
 }
 
 async function main() {
-  const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
-  const prisma = new PrismaClient({ adapter: createAdapter(databaseUrl) });
+  const prisma = createRuntimePrismaClient();
 
   if (!nextPassword) {
     throw new Error(

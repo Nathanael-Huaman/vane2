@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.19 <23",
+    "pnpm": ">=10 <12"
+  },
   "scripts": {
     "dev": "next dev",
     "predev": "prisma generate",

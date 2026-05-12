@@ -28,7 +28,17 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
+function resolveFirstExisting(paths) {
+  const found = paths.find((file) => existsSync(join(rootDir, file)));
+  return found || paths[0];
+}
+
 section("1. Estructura de archivos del ticket");
+
+const passwordResetFile = resolveFirstExisting([
+  "lib/server/password/password-reset.js",
+  "lib/server/password-reset.js",
+]);
 
 const requiredFiles = [
   "app/recuperar-contrasena/page.js",
@@ -36,7 +46,7 @@ const requiredFiles = [
   "components/password-reset-request-form.jsx",
   "components/password-reset-confirm-form.jsx",
   "lib/actions/password-reset.js",
-  "lib/server/password-reset.js",
+  passwordResetFile,
   "lib/server/mailer.js",
 ];
 
@@ -59,7 +69,7 @@ const resetConfirmForm = readFileSync(
 );
 const action = readFileSync(join(rootDir, "lib/actions/password-reset.js"), "utf-8");
 const serverReset = readFileSync(
-  join(rootDir, "lib/server/password-reset.js"),
+  join(rootDir, passwordResetFile),
   "utf-8"
 );
 const mailer = readFileSync(join(rootDir, "lib/server/mailer.js"), "utf-8");

@@ -1,10 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "../lib/generated/prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { createRuntimePrismaClient } from "../lib/testing/prisma-runtime";
 
 const TEST_CLIENTE_EMAIL = (
   process.env.TEST_CLIENTE_EMAIL || "cliente.prueba@obstedesign.local"
@@ -14,20 +11,7 @@ const TEST_CLIENTE_EMAIL = (
 const TEST_PASSWORD = String(process.env.TEST_CLIENTE_PASSWORD || "Cliente123!");
 const SESSION_COOKIE_NAME = "authjs.session-token";
 
-function createAdapter(databaseUrl: string) {
-  const lower = databaseUrl.toLowerCase();
-  if (lower.startsWith("postgres://") || lower.startsWith("postgresql://")) {
-    return new PrismaPg(new Pool({ connectionString: databaseUrl }));
-  }
-  if (lower.startsWith("file:") || lower.startsWith("libsql:")) {
-    return new PrismaLibSql({ url: databaseUrl });
-  }
-  throw new Error("DATABASE_URL no soportada para tests de seguridad");
-}
-
-const prisma = new PrismaClient({
-  adapter: createAdapter(process.env.DATABASE_URL || "file:./dev.db"),
-});
+const prisma = createRuntimePrismaClient();
 
 function uniqueEmail(prefix: string) {
   return `${prefix}.${Date.now()}.${randomBytes(4).toString("hex")}@obstedesign.local`;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { registrarUsuario } from "@/lib/server/registro";
-import { logError } from "@/lib/server/logger";
+import { registrarUsuario } from "@/lib/server/user/registro";
+import { logError } from "@/lib/server/shared";
 
 export async function POST(request) {
   let body;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { verifyEmailWithToken } from "@/lib/server/email-verification";
-import { logError } from "@/lib/server/logger";
+import { verifyEmailWithToken } from "@/lib/server/auth";
+import { logError } from "@/lib/server/shared";
 
 export async function GET(request) {
   const url = new URL(request.url);
@@ -27,4 +27,3 @@ export async function GET(request) {
     );
   }
 }
-

@@ -28,11 +28,21 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
+function resolveFirstExisting(paths) {
+  const found = paths.find((file) => existsSync(join(rootDir, file)));
+  return found || paths[0];
+}
+
 section("1. Estructura de archivos del ticket");
 
-const requiredFiles = [
+const authSessionFile = resolveFirstExisting([
+  "lib/server/auth/auth-session.js",
   "lib/server/auth-session.js",
-  "lib/server/usuario.js",
+]);
+
+const requiredFiles = [
+  authSessionFile,
+  resolveFirstExisting(["lib/server/user/usuario.js", "lib/server/usuario.js"]),
   "lib/auth/flags.js",
   "components/auth-provider.jsx",
   "components/role-guard.jsx",
@@ -42,8 +52,12 @@ for (const file of requiredFiles) {
   assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
 }
 
-const authSession = readFileSync(join(rootDir, "lib/server/auth-session.js"), "utf-8");
-const usuarioServer = readFileSync(join(rootDir, "lib/server/usuario.js"), "utf-8");
+const authSession = readFileSync(join(rootDir, authSessionFile), "utf-8");
+const usuarioServerFile = resolveFirstExisting([
+  "lib/server/user/usuario.js",
+  "lib/server/usuario.js",
+]);
+const usuarioServer = readFileSync(join(rootDir, usuarioServerFile), "utf-8");
 const authProvider = readFileSync(join(rootDir, "components/auth-provider.jsx"), "utf-8");
 const roleGuard = readFileSync(join(rootDir, "components/role-guard.jsx"), "utf-8");
 const perfilPage = readFileSync(join(rootDir, "app/perfil/page.js"), "utf-8");

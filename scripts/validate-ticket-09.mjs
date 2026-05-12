@@ -30,25 +30,36 @@ function section(title) {
 
 section("1. Estructura de archivos del ticket");
 
-const requiredFiles = ["app/page.js", "lib/auth/auth-client.js", "lib/auth/config.js"];
+const requiredFiles = [
+  "app/page.js",
+  "components/auth-google-button.jsx",
+  "hooks/use-google-provider.js",
+  "lib/auth/auth-client.js",
+  "lib/auth/config.js",
+  "lib/auth/feedback.js",
+];
 for (const file of requiredFiles) {
   assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
 }
 
 const loginPage = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const googleButton = readFileSync(join(rootDir, "components/auth-google-button.jsx"), "utf-8");
+const googleProviderHook = readFileSync(join(rootDir, "hooks/use-google-provider.js"), "utf-8");
 const authClient = readFileSync(join(rootDir, "lib/auth/auth-client.js"), "utf-8");
 const authConfig = readFileSync(join(rootDir, "lib/auth/config.js"), "utf-8");
+const feedback = readFileSync(join(rootDir, "lib/auth/feedback.js"), "utf-8");
 
 section("2. Flujo de UI para acceso con Google");
 
 assert("pantalla tiene boton de Google", loginPage.includes("Iniciar sesion con Google"));
-assert("UI maneja estado de carga Google", loginPage.includes("Conectando..."));
+assert("UI maneja estado de carga Google", googleButton.includes("googleLoading") || feedback.includes("Conectando"));
 assert("UI dispara handleGoogleSignIn", loginPage.includes("onClick={handleGoogleSignIn}"));
 assert("login usa helper signInWithGoogle", loginPage.includes("signInWithGoogle()"));
-assert("se consulta disponibilidad del provider", loginPage.includes("getProviders"));
+assert("se consulta disponibilidad del provider", loginPage.includes("useGoogleProvider") && googleProviderHook.includes("getProviders"));
 assert(
   "si el provider no existe, muestra mensaje minimo",
-  loginPage.includes("El acceso con Google no esta disponible en este entorno.")
+  loginPage.includes("El acceso con Google no esta disponible en este entorno.") ||
+    feedback.includes("El acceso con Google no esta disponible en este entorno.")
 );
 assert(
   "si Auth.js retorna error por query, se sanitiza en cliente",
@@ -67,7 +78,9 @@ assert(
 );
 assert(
   "auth client devuelve mensaje minimo de error",
-  authClient.includes("No se pudo iniciar sesion con Google. Intenta nuevamente.")
+  authClient.includes("No se pudo iniciar sesion con Google. Intenta nuevamente.") ||
+    authClient.includes("AUTH_FEEDBACK_MESSAGES.googleError") &&
+      feedback.includes("No se pudo iniciar sesion con Google. Intenta nuevamente.")
 );
 
 section("4. Integracion backend Auth.js con Google");

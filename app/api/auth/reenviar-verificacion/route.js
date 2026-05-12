@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { resendEmailVerification } from "@/lib/server/email-verification";
-import { logError } from "@/lib/server/logger";
+import { resendEmailVerification } from "@/lib/server/auth";
+import { logError } from "@/lib/server/shared";
 import { auth } from "@/lib/auth";
 
 export async function POST(request) {
@@ -37,4 +37,3 @@ export async function POST(request) {
     );
   }
 }
-

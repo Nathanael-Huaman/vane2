@@ -1,27 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { createHash, randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "../lib/generated/prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { createRuntimePrismaClient } from "../lib/testing/prisma-runtime";
 
 const TEST_PASSWORD = "Cliente123!";
 
-function createAdapter(databaseUrl: string) {
-  const lower = databaseUrl.toLowerCase();
-  if (lower.startsWith("postgres://") || lower.startsWith("postgresql://")) {
-    return new PrismaPg(new Pool({ connectionString: databaseUrl }));
-  }
-  if (lower.startsWith("file:") || lower.startsWith("libsql:")) {
-    return new PrismaLibSql({ url: databaseUrl });
-  }
-  throw new Error("DATABASE_URL no soportada para tests E2E");
-}
-
-const prisma = new PrismaClient({
-  adapter: createAdapter(process.env.DATABASE_URL || "file:./dev.db"),
-});
+const prisma = createRuntimePrismaClient();
 
 function uniqueEmail(prefix: string) {
   return `${prefix}.${Date.now()}.${randomBytes(4).toString("hex")}@obstedesign.local`;

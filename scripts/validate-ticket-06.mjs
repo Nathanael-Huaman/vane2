@@ -28,9 +28,19 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
+function resolveFirstExisting(paths) {
+  const found = paths.find((file) => existsSync(join(rootDir, file)));
+  return found || paths[0];
+}
+
 section("1. Estructura de archivos del ticket");
 
-const requiredFiles = ["lib/auth/config.js", "lib/auth/adapter.js", "lib/server/usuario.js"];
+const usuarioFile = resolveFirstExisting([
+  "lib/server/user/usuario.js",
+  "lib/server/usuario.js",
+]);
+
+const requiredFiles = ["lib/auth/config.js", "lib/auth/adapter.js", usuarioFile];
 for (const file of requiredFiles) {
   assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
 }
@@ -68,11 +78,15 @@ assert("upsert no sobreescribe rol existente", adapterContent.includes("update: 
 
 section("4. Rol sigue saliendo de base de datos propia");
 
-const usuarioContent = readFileSync(join(rootDir, "lib/server/usuario.js"), "utf-8");
+const usuarioContent = readFileSync(join(rootDir, usuarioFile), "utf-8");
 
 assert("usuario.js sigue exportando getUsuarioByEmailForAuth", usuarioContent.includes("export async function getUsuarioByEmailForAuth"));
 assert("auth config conserva callback session", configContent.includes("async session"));
-assert("session propaga role", configContent.includes("session.user.role"));
+assert(
+  "session propaga role",
+  configContent.includes("session.user.role") ||
+    configContent.includes("role: user?.role")
+);
 
 console.log(`\n${"=".repeat(50)}`);
 console.log(`Resultados: ${passed} pasaron, ${failed} fallaron`);

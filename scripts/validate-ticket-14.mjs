@@ -28,12 +28,22 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
+function resolveFirstExisting(paths) {
+  const found = paths.find((file) => existsSync(join(rootDir, file)));
+  return found || paths[0];
+}
+
 section("1. Estructura de archivos del ticket");
+
+const viewModeFile = resolveFirstExisting([
+  "lib/server/session/view-mode.js",
+  "lib/server/view-mode.js",
+]);
 
 const requiredFiles = [
   "components/admin-view-mode-switcher.jsx",
   "lib/actions/view-mode.js",
-  "lib/server/view-mode.js",
+  viewModeFile,
   "app/tienda/page.js",
   "app/perfil/page.js",
   "prisma/schema.prisma",
@@ -49,7 +59,7 @@ const switcher = readFileSync(
 );
 const action = readFileSync(join(rootDir, "lib/actions/view-mode.js"), "utf-8");
 const serverViewMode = readFileSync(
-  join(rootDir, "lib/server/view-mode.js"),
+  join(rootDir, viewModeFile),
   "utf-8"
 );
 const tiendaPage = readFileSync(join(rootDir, "app/tienda/page.js"), "utf-8");
