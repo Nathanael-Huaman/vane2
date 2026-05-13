@@ -30,12 +30,12 @@ function section(title) {
 
 section("1. Estructura de archivos del ticket");
 
-const requiredFiles = ["app/page.js", "app/tienda/page.js", "lib/auth/auth-client.js"];
+const requiredFiles = ["app/page.js", "app/login/page.js", "app/tienda/page.js", "lib/auth/auth-client.js"];
 for (const file of requiredFiles) {
   assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
 }
 
-const loginPage = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const loginPage = readFileSync(join(rootDir, "app/login/page.js"), "utf-8");
 const tiendaPage = readFileSync(join(rootDir, "app/tienda/page.js"), "utf-8");
 const authClient = readFileSync(join(rootDir, "lib/auth/auth-client.js"), "utf-8");
 

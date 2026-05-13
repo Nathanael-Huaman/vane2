@@ -54,7 +54,7 @@ for (const file of requiredFiles) {
   assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
 }
 
-const loginPage = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const loginPage = readFileSync(join(rootDir, "app/login/page.js"), "utf-8");
 const recoveryPage = readFileSync(
   join(rootDir, "app/recuperar-contrasena/page.js"),
   "utf-8"

@@ -49,7 +49,7 @@ const authButtonsContent = readFileSync(join(rootDir, "components/auth-buttons.j
 assert("auth-buttons.jsx es client component", authButtonsContent.includes('"use client"'));
 assert("auth-buttons.jsx tiene boton Iniciar sesion", authButtonsContent.includes("Iniciar sesion"));
 assert("auth-buttons.jsx tiene boton Registrarse", authButtonsContent.includes("Registrarse"));
-assert("auth-buttons.jsx enlaza a /", authButtonsContent.includes('href="/"'));
+assert("auth-buttons.jsx enlaza a /login", authButtonsContent.includes('href="/login"'));
 assert("auth-buttons.jsx enlaza a /registro", authButtonsContent.includes('href="/registro"'));
 
 section("3. Componente UserMenu");
