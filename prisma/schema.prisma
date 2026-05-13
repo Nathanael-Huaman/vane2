@@ -13,6 +13,11 @@ enum ViewMode {
   administrador
 }
 
+enum BlogPostStatus {
+  borrador
+  publicado
+}
+
 datasource db {
   provider = "sqlite"
 }
@@ -34,6 +39,7 @@ model Usuario {
   sesiones                        Sesion[]
   cuentas                         Account[]
   emailVerificationResendAttempts EmailVerificationResendAttempt[]
+  blogPosts                       BlogPost[]
 
   @@map("usuarios")
 }
@@ -92,4 +98,25 @@ model EmailVerificationResendAttempt {
 
   @@index([userId, createdAt])
   @@map("email_verification_resend_attempts")
+}
+
+model BlogPost {
+  id             String         @id @default(cuid())
+  title          String
+  slug           String         @unique
+  excerpt        String?
+  content        String
+  status         BlogPostStatus @default(borrador)
+  seoTitle       String?
+  seoDescription String?
+  authorId       String?
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  author Usuario? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([publishedAt])
+  @@map("blog_posts")
 }
