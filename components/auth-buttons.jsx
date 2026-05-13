@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 export function AuthButtons() {
   return (
     <div className="flex items-center gap-2">
-      <Link href="/" className="cursor-pointer">
+      <Link href="/login" className="cursor-pointer">
         <Button variant="ghost" size="sm" className="hover:bg-primary/10">
           Iniciar sesion
         </Button>

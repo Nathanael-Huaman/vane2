@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Obstedesign - Iniciar sesion",
-  description: "Inicia sesion en tu cuenta de Obstedesign",
+  title: "Obstedesign - Tienda obstétrica",
+  description: "Tienda de productos obstétricos para embarazo, parto y postparto",
 };
 
 export default function RootLayout({ children }) {
