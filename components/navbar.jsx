@@ -185,7 +185,7 @@ export function Navbar() {
                   <UserMenu currentViewMode={viewMode} />
                 ) : (
                   <div className="space-y-2">
-                    <Link href="/" className="block cursor-pointer">
+                    <Link href="/login" className="block cursor-pointer">
                       <Button
                         variant="ghost"
                         size="sm"

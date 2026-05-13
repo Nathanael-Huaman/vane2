@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
@@ -16,7 +16,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthFeedbackBanner } from "@/components/auth-feedback-banner";
 import { LoadingButtonContent } from "@/components/loading-button-content";
 
-export default function RegistroConfirmacionPage() {
+function RegistroConfirmacionContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
   const [resendLoading, setResendLoading] = useState(false);
@@ -101,7 +101,7 @@ export default function RegistroConfirmacionPage() {
           ) : null}
 
           <Button variant="outline" className="w-full" asChild>
-            <Link href="/">Ir al inicio de sesion</Link>
+            <Link href="/login">Ir al inicio de sesión</Link>
           </Button>
 
           <div className="space-y-2">
@@ -125,5 +125,30 @@ export default function RegistroConfirmacionPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function RegistroConfirmacionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
+          <div className="absolute top-4 right-4">
+            <ThemeToggle />
+          </div>
+
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle>Cargando confirmacion</CardTitle>
+              <CardDescription>
+                Preparamos los datos de tu registro.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      }
+    >
+      <RegistroConfirmacionContent />
+    </Suspense>
   );
 }

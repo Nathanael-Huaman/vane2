@@ -183,7 +183,7 @@ export function PasswordResetConfirmForm({ email, token, expiresAt }) {
         </form>
 
         <Link
-          href="/"
+          href="/login"
           className="inline-flex items-center gap-2 text-sm text-primary underline underline-offset-4 hover:text-primary/80 cursor-pointer"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />

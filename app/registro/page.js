@@ -292,10 +292,10 @@ export default function RegistroPage() {
           <p className="mt-4 text-center text-sm text-muted-foreground">
             ¿Ya tienes cuenta?{" "}
             <Link
-              href="/"
+              href="/login"
               className="text-primary underline underline-offset-4 hover:text-primary/80 cursor-pointer"
             >
-              Inicia sesion
+              Inicia sesión
             </Link>
           </p>
         </CardContent>

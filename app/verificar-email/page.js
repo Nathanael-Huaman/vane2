@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MailCheck, MailX } from "lucide-react";
@@ -16,7 +16,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthFeedbackBanner } from "@/components/auth-feedback-banner";
 import { LoadingButtonContent } from "@/components/loading-button-content";
 
-export default function VerificarEmailPage() {
+function VerificarEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -32,7 +32,7 @@ export default function VerificarEmailPage() {
 
     async function runVerification() {
       if (!token) {
-        router.replace("/");
+        router.replace("/login");
         return;
       }
 
@@ -184,3 +184,25 @@ export default function VerificarEmailPage() {
   );
 }
 
+export default function VerificarEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
+          <div className="absolute top-4 right-4">
+            <ThemeToggle />
+          </div>
+
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle>Verificando</CardTitle>
+              <CardDescription>Estamos confirmando tu enlace...</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      }
+    >
+      <VerificarEmailContent />
+    </Suspense>
+  );
+}

@@ -63,7 +63,7 @@ export default function ActiveSessionsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button className="w-full" asChild>
-                <Link href="/">Iniciar sesion</Link>
+                <Link href="/login">Iniciar sesión</Link>
               </Button>
             </CardContent>
           </Card>
