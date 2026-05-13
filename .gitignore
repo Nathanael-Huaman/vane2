@@ -48,3 +48,9 @@ next-env.d.ts
 
 # sqlite
 *.db
+
+# local agent/tool artifacts
+.atl/
+.windsurf/
+run_git_commands.sh
+trash_rm_scripts/
