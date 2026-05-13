@@ -122,7 +122,7 @@ function LoginPageContent() {
             tone="info"
             title="Cargando acceso"
             message={AUTH_FEEDBACK_MESSAGES.authChecking}
-            description="Te redirigimos automáticamente si ya tenés una sesión activa."
+            description="Te redirigimos automáticamente si ya tienes una sesión activa."
           />
         </div>
       </div>
@@ -143,7 +143,7 @@ function LoginPageContent() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle>Iniciar sesión</CardTitle>
-          <CardDescription>Ingresá tus datos para acceder a tu cuenta</CardDescription>
+          <CardDescription>Ingresa tus datos para acceder a tu cuenta</CardDescription>
         </CardHeader>
 
         <CardContent>

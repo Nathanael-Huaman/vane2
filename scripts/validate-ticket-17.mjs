@@ -55,7 +55,7 @@ for (const file of sharedFiles) {
   assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
 }
 
-const home = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const loginPage = readFileSync(join(rootDir, "app/login/page.js"), "utf-8");
 const authClient = readFileSync(join(rootDir, "lib/auth/auth-client.js"), "utf-8");
 const credentials = readFileSync(
   join(rootDir, credentialsFile),
@@ -75,11 +75,11 @@ section("2. Feedback visual unificado");
 
 assert(
   "login usa banner compartido",
-  home.includes("AuthFeedbackBanner")
+  loginPage.includes("AuthFeedbackBanner")
 );
 assert(
   "login usa loading compartido",
-  home.includes("LoadingButtonContent")
+  loginPage.includes("LoadingButtonContent")
 );
 assert(
   "recuperacion usa banner compartido",
