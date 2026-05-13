@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useSyncExternalStore, startTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ShoppingBag, Home, LayoutDashboard } from "lucide-react";
+import { Menu, X, ShoppingBag, Home, LayoutDashboard, BookOpen, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
@@ -15,10 +15,12 @@ import { VIEW_MODE_ADMINISTRADOR } from "@/lib/types";
 const baseNavLinks = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/tienda", label: "Tienda", icon: ShoppingBag },
+  { href: "/blog", label: "Blog", icon: BookOpen },
 ];
 
 const adminNavLinks = [
   { href: "/admin", label: "Panel Admin", icon: LayoutDashboard },
+  { href: "/admin/blog", label: "Blog Admin", icon: FileText },
 ];
 
 export function Navbar() {
