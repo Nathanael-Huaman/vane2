@@ -2,6 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./providers";
 import { AuthProvider } from "@/components/auth-provider";
+import { Navbar } from "@/components/navbar";
+import { EmailVerificationWarningBanner } from "@/components/email-verification-warning-banner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Obstedesign - Iniciar sesion",
-  description: "Inicia sesion en tu cuenta de Obstedesign",
+  title: "Obstedesign - Tienda obstétrica",
+  description: "Tienda de productos obstétricos para embarazo, parto y postparto",
 };
 
 export default function RootLayout({ children }) {
@@ -33,7 +35,9 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange={false}
         >
           <AuthProvider>
-            {children}
+            <Navbar />
+            <EmailVerificationWarningBanner />
+            <main className="flex-1">{children}</main>
           </AuthProvider>
         </ThemeProvider>
       </body>

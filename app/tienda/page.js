@@ -1,159 +1,102 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Store, Sparkles, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
-import { AdminOnly, ClienteOnly } from "@/components/role-guard";
-import { SignOutButton } from "@/components/sign-out-button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { getPublicCatalogProducts } from "@/lib/server/store/catalog";
 import { Badge } from "@/components/ui/badge";
-import { getAuthenticatedSession } from "@/lib/server/auth-session";
-import { isAdmin as isAdminRole } from "@/lib/auth/flags";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+
+function ProductImage({ product }) {
+	if (product.hasImage) {
+		return (
+			<Image
+				src={product.imageUrl}
+				alt={product.name}
+				width={640}
+				height={440}
+				unoptimized
+				className="h-44 w-full rounded-md object-cover"
+			/>
+		);
+	}
+
+	return (
+		<div
+			className="flex h-44 w-full items-center justify-center rounded-md border border-dashed bg-muted/40 text-sm text-muted-foreground"
+			aria-label={product.imageFallbackLabel || "Imagen no disponible"}
+		>
+			{product.imageFallbackLabel || "Imagen no disponible"}
+		</div>
+	);
+}
 
 export default async function TiendaPage() {
-  const sessionResult = await getAuthenticatedSession();
-  const user = sessionResult.ok ? sessionResult.data : null;
-  const isAuthenticated = sessionResult.ok;
-  const isAdmin = isAdminRole(user?.role);
-  const hasAuthError = !sessionResult.ok && sessionResult.error.status !== 401;
+	const products = await getPublicCatalogProducts();
 
-  if (hasAuthError) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="mx-auto max-w-md space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle className="h-5 w-5 text-destructive" aria-hidden="true" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">Entrada a la tienda</h1>
-          </div>
+	return (
+		<div className="min-h-screen bg-background p-8">
+			<div className="mx-auto max-w-6xl space-y-6">
+				<header className="space-y-2">
+					<h1 className="text-3xl font-bold tracking-tight text-primary">
+						Tienda Obstedesign
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Explora nuestro catálogo público de productos activos.
+					</p>
+				</header>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>No se pudo cargar la tienda</CardTitle>
-              <CardDescription>
-                Ocurrio un problema al validar tu sesion.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Intenta nuevamente en unos instantes.
-              </p>
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/">Volver al inicio</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="mx-auto max-w-md space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <Store className="h-5 w-5 text-primary" aria-hidden="true" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">Tienda Obstedesign</h1>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Sesion no iniciada</CardTitle>
-              <CardDescription>
-                Inicia sesion para entrar a la tienda.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full" asChild>
-                <Link href="/">Iniciar sesion</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
-              Tienda Obstedesign
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Bienvenido, {user?.email}. Tu experiencia fue cargada segun tu rol.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant={isAdmin ? "default" : "secondary"}>
-              {isAdmin ? "administrador" : "cliente"}
-            </Badge>
-            <SignOutButton className="w-auto" />
-          </div>
-        </header>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle>Catalogo principal</CardTitle>
-            </div>
-            <CardDescription>
-              Seccion compartida para clientes y administradores.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Desde aqui ambos roles pueden explorar la tienda y continuar con su flujo.
-            </p>
-          </CardContent>
-        </Card>
-
-        <AdminOnly role={user.role}>
-          <Card className="border-primary/50">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" aria-hidden="true" />
-                <CardTitle>Opciones extra de administrador</CardTitle>
-              </div>
-              <CardDescription>
-                Solo visible para usuarios con rol administrador.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md bg-primary/5 p-3 text-sm text-muted-foreground">
-                Aqui se habilitan acciones administrativas dentro de la misma experiencia de tienda.
-              </div>
-            </CardContent>
-          </Card>
-        </AdminOnly>
-
-        <ClienteOnly role={user.role}>
-          <Card className="border-secondary/40">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-secondary-foreground" aria-hidden="true" />
-                <CardTitle>Experiencia cliente activa</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Estas en la vista base de compra. Las opciones administrativas se mantienen ocultas.
-              </p>
-            </CardContent>
-          </Card>
-        </ClienteOnly>
-      </div>
-    </div>
-  );
+				{products.length === 0 ? (
+					<Card>
+						<CardHeader>
+							<CardTitle>Sin productos publicados</CardTitle>
+							<CardDescription>
+								Todavía no hay productos activos para mostrar en la tienda.
+							</CardDescription>
+						</CardHeader>
+					</Card>
+				) : (
+					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+						{products.map((product) => (
+							<Card key={product.id} className="overflow-hidden">
+								<CardContent className="space-y-3 p-4">
+									<ProductImage product={product} />
+									<div className="space-y-1">
+										<p className="text-xs uppercase tracking-wide text-muted-foreground">
+											{product.category.name}
+										</p>
+										<h2 className="text-lg font-semibold text-foreground">
+											{product.name}
+										</h2>
+										<p className="line-clamp-2 text-sm text-muted-foreground">
+											{product.summary}
+										</p>
+									</div>
+									<div className="flex items-center justify-between gap-2">
+										<span className="font-medium text-primary">
+											{product.priceLabel}
+										</span>
+										<Badge
+											variant={product.isOutOfStock ? "secondary" : "default"}
+										>
+											{product.availabilityLabel}
+										</Badge>
+									</div>
+									<Link
+										href={`/tienda/${product.slug}`}
+										className="inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
+									>
+										Ver detalle
+									</Link>
+								</CardContent>
+							</Card>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }

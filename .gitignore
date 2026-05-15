@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/test-results/
 
 # next.js
 /.next/
@@ -43,6 +44,14 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+/reports/*.json
 
 # sqlite
 *.db
+
+# local agent/tooling artifacts
+/.pi-lens/
+/.pi/
+/.windsurf/
+/run_git_commands.sh
+/trash_rm_scripts/

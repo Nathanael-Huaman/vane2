@@ -33,10 +33,13 @@ section("1. Estructura de archivos del ticket");
 const requiredFiles = [
   "app/page.js",
   "app/recuperar-contrasena/page.js",
+  "components/auth-google-button.jsx",
   "components/theme-toggle.jsx",
+  "hooks/use-google-provider.js",
   "lib/actions/auth.js",
   "lib/auth/auth-client.js",
   "lib/auth/config.js",
+  "lib/auth/feedback.js",
 ];
 
 for (const file of requiredFiles) {
@@ -46,6 +49,9 @@ for (const file of requiredFiles) {
 section("2. Contrato visual de login");
 
 const loginPage = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const googleProviderHook = readFileSync(join(rootDir, "hooks/use-google-provider.js"), "utf-8");
+const googleButton = readFileSync(join(rootDir, "components/auth-google-button.jsx"), "utf-8");
+const feedback = readFileSync(join(rootDir, "lib/auth/feedback.js"), "utf-8");
 
 assert("muestra branding OBSTEDESIGN", loginPage.includes("OBSTEDESIGN"));
 assert("renderiza campo correo", loginPage.includes("Correo electronico"));
@@ -69,25 +75,28 @@ assert(
 
 section("3. Seguridad y UX del flujo de Google");
 
-assert("consulta providers de auth en cliente", loginPage.includes("getProviders"));
+assert("consulta providers de auth en cliente", loginPage.includes("useGoogleProvider") && googleProviderHook.includes("getProviders"));
 assert(
   "deshabilita Google cuando provider no esta disponible",
-  loginPage.includes("!googleProviderEnabled")
+  loginPage.includes("!googleProviderEnabled") || googleButton.includes("!googleProviderEnabled")
 );
 assert(
   "muestra mensaje seguro cuando Google no esta disponible",
-  loginPage.includes("El acceso con Google no esta disponible en este entorno.")
+  loginPage.includes("El acceso con Google no esta disponible en este entorno.") ||
+    feedback.includes("El acceso con Google no esta disponible en este entorno.")
 );
 
 section("4. Login por credenciales via Server Action");
 
 assert(
-  "login usa signInWithCredentials de Server Action",
-  loginPage.includes("signInWithCredentialsAction")
+  "login usa flujo seguro de credenciales",
+  loginPage.includes("signInWithCredentialsAction") ||
+    loginPage.includes('action="/api/auth/credentials-login"')
 );
 assert(
   "evita exponer detalles internos en error de credenciales",
-  loginPage.includes("Credenciales invalidas. Intenta nuevamente.")
+  loginPage.includes("Credenciales invalidas. Intenta nuevamente.") ||
+    feedback.includes("Credenciales invalidas. Intenta nuevamente.")
 );
 
 section("5. Tema dark/light y soporte visual base");

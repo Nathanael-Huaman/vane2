@@ -1,36 +1,181 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Frontend Obstedesign
 
-## Getting Started
+## Proposito actual
 
-First, run the development server:
+Frontend Next.js 16 de Obstedesign enfocado en autenticacion y acceso:
+
+- login con credenciales en `/`
+- registro en `/registro`
+- login/registro con Google cuando el provider esta configurado
+- verificacion de email post-registro
+- recuperacion y restablecimiento de contrasena
+- resolucion de rol (`cliente` / `administrador`)
+- `viewMode` por sesion para que administradores alternen entre vista cliente y admin
+
+## Setup local
+
+1. Instalar dependencias:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Crear variables locales:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Preparar base local:
+
+   ```bash
+   pnpm prisma migrate dev
+   ```
+
+4. Crear usuarios de prueba:
+
+   ```bash
+   pnpm seed:test-auth-users
+   ```
+
+5. Levantar la app:
+
+   ```bash
+   pnpm dev
+   ```
+
+App local: `http://localhost:3000`
+
+## Variables de entorno
+
+### Requeridas
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+DATABASE_URL="file:./dev.db"
+AUTH_SECRET="genera-un-secreto-largo-y-seguro"
+AUTH_URL="http://localhost:3000"
+APP_URL="http://localhost:3000"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Google OAuth
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```bash
+AUTH_GOOGLE_ID="tu-google-client-id"
+AUTH_GOOGLE_SECRET="tu-google-client-secret"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Si faltan, el boton de Google se muestra deshabilitado y Auth.js no registra el provider.
 
-## Learn More
+### Email transaccional / Brevo
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+BREVO_API_KEY="xkeysib-tu-api-key-de-brevo"
+EMAIL_FROM="noreply@obsedesign.com"
+EMAIL_FROM_NAME="Obstedesign"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- en produccion, Brevo debe estar configurado para envio real
+- en desarrollo, si Brevo no esta disponible, el flujo no se rompe: queda preview/log seguro
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### URL publica cliente
 
-## Deploy on Vercel
+```bash
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Usuarios de prueba
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+TEST_CLIENTE_EMAIL="cliente.prueba@obstedesign.local"
+TEST_CLIENTE_PASSWORD="Cliente123!"
+TEST_ADMIN_EMAIL="admin.prueba@obstedesign.local"
+TEST_ADMIN_PASSWORD="Admin12345!"
+```
+
+### Variables de verificacion manual
+
+```bash
+VERIFY_PASSWORD_RESET_EMAIL="usuario@dominio.com"
+VERIFY_PASSWORD_RESET_NEW_PASSWORD="NuevaClave123!"
+VERIFY_PASSWORD_RESET_APP_URL="http://localhost:3000"
+VERIFY_PASSWORD_RESET_ALLOW_LOG_PREVIEW="1"
+```
+
+## Auth actual
+
+### Credenciales
+
+- el login principal vive en `/`
+- valida formato de email/password en cliente y servidor
+- Auth.js usa provider `credentials`
+- al autenticar, el rol real se resuelve desde BD
+
+### Google
+
+- usa Auth.js + Google provider
+- solo se habilita con `AUTH_GOOGLE_ID` y `AUTH_GOOGLE_SECRET`
+- exige email verificado por Google antes de permitir el acceso
+- si existe una cuenta previa por credenciales con el mismo email, permite linking seguro
+
+### Verificacion de email
+
+- el registro genera token de verificacion y envia correo
+- la confirmacion se consume en `/verificar-email`
+- existe reenvio de verificacion con limite por ventana
+
+### Recuperacion de contrasena
+
+- solicitud en `/recuperar-contrasena`
+- consumo del token en `/restablecer-contrasena`
+- respuesta publica neutra para no filtrar existencia de cuentas
+- el token se persiste hasheado y vence automaticamente
+
+## Roles y view mode
+
+- `cliente`: experiencia cliente fija
+- `administrador`: conserva rol admin real y puede alternar `viewMode`
+- `viewMode` se persiste por sesion; no cambia el rol real, solo la experiencia visible
+
+## Scripts principales
+
+### Desarrollo
+
+```bash
+pnpm dev
+pnpm build
+pnpm lint
+```
+
+### Seeds
+
+```bash
+pnpm seed:test-cliente
+pnpm seed:test-auth-users
+```
+
+### Validaciones agrupadas
+
+```bash
+pnpm test
+pnpm test:validation
+pnpm test:runtime
+pnpm test:e2e
+```
+
+### Tickets / checks utiles
+
+```bash
+pnpm test:ticket-08
+pnpm test:ticket-10
+pnpm test:ticket-11
+pnpm test:ticket-15
+pnpm test:email
+pnpm test:email:unit
+pnpm test:email:integration
+pnpm verify:password-reset:user
+```
+
+## Reportes generados
+
+- `reports/*.md` contiene documentacion viva de validacion
+- `reports/*.json` y `test-results/` son outputs generados y quedan ignorados por git

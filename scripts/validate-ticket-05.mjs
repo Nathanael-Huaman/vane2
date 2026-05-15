@@ -45,6 +45,11 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
+function resolveFirstExisting(paths) {
+  const found = paths.find((file) => existsSync(join(rootDir, file)));
+  return found || paths[0];
+}
+
 section("1. UsuarioPublico con campos de Auth.js (name, image, emailVerified)");
 
 const fullUser = {
@@ -127,7 +132,7 @@ const requiredFiles = [
   "lib/auth/index.js",
   "lib/auth/flags.js",
   "lib/auth/role.js",
-  "lib/server/auth-session.js",
+  resolveFirstExisting(["lib/server/auth/auth-session.js", "lib/server/auth-session.js"]),
   "lib/actions/auth.js",
   "app/api/auth/[...nextauth]/route.js",
 ];
@@ -195,15 +200,21 @@ assert("schema tiene modelo VerificationToken", schemaContent.includes("model Ve
 assert("schema tiene modelo Usuario con name", schemaContent.includes("name") && schemaContent.includes("String?"));
 assert("schema tiene modelo Usuario con image", schemaContent.includes("image") && schemaContent.includes("String?"));
 assert("schema tiene modelo Usuario con emailVerified", schemaContent.includes("emailVerified") && schemaContent.includes("DateTime?"));
-assert("Usuario tiene relacion cuentas", schemaContent.includes("cuentas  Account[]"));
+assert(
+  "Usuario tiene relacion cuentas",
+  /\bcuentas\s+Account\[\]/.test(schemaContent)
+);
 assert("Account tiene relacion usuario", schemaContent.includes("usuario Usuario @relation"));
 assert("Account mapeado a cuentas", schemaContent.includes('@@map("cuentas")'));
 assert("VerificationToken mapeado a tokens_verificacion", schemaContent.includes('@@map("tokens_verificacion")'));
 
 section("8. Funcion getUsuarioByEmailForAuth en usuario.js");
 
-const usuarioPath = join(rootDir, "lib/server/usuario.js");
-const usuarioContent = readFileSync(usuarioPath, "utf-8");
+const usuarioPath = resolveFirstExisting([
+  "lib/server/user/usuario.js",
+  "lib/server/usuario.js",
+]);
+const usuarioContent = readFileSync(join(rootDir, usuarioPath), "utf-8");
 
 assert("usuario.js exporta getUsuarioByEmailForAuth", usuarioContent.includes("export async function getUsuarioByEmailForAuth"));
 assert("usuario.js sigue exportando getUsuarioByEmail", usuarioContent.includes("export async function getUsuarioByEmail"));
@@ -220,7 +231,10 @@ assert("route handler exporta GET y POST", routeContent.includes("GET") && route
 
 section("10. auth-session.js integra Auth.js");
 
-const authSessionPath = join(rootDir, "lib/server/auth-session.js");
+const authSessionPath = join(
+  rootDir,
+  resolveFirstExisting(["lib/server/auth/auth-session.js", "lib/server/auth-session.js"])
+);
 const authSessionContent = readFileSync(authSessionPath, "utf-8");
 
 assert("auth-session importa auth desde modulo auth", authSessionContent.includes("auth"));

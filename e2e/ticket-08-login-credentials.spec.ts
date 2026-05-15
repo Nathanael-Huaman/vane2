@@ -9,7 +9,7 @@ test.describe("Ticket 08 - Login con credenciales", () => {
   test("permite login con credenciales validas", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByText("OBSTEDESIGN")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "OBSTEDESIGN" })).toBeVisible();
 
     await page.getByLabel("Correo electronico").fill(TEST_EMAIL);
     await page.getByLabel("Contrasena").fill(TEST_PASSWORD);

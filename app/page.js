@@ -1,442 +1,87 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { getProviders } from "next-auth/react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { useAuth } from "@/hooks/use-auth";
-import { signInWithGoogle } from "@/lib/auth/auth-client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const GENERIC_GOOGLE_ERROR =
-  "No se pudo iniciar sesion con Google. Intenta nuevamente.";
-const GENERIC_CREDENTIALS_ERROR = "Credenciales invalidas. Intenta nuevamente.";
-const isDev = process.env.NODE_ENV !== "production";
+const featuredCategories = [
+  {
+    name: "Fajas y soporte",
+    description: "Contención cómoda para embarazo y postparto.",
+  },
+  {
+    name: "Lactancia",
+    description: "Accesorios prácticos para una lactancia más simple.",
+  },
+  {
+    name: "Higiene y cuidado",
+    description: "Productos seguros para mamá y recién nacido.",
+  },
+];
 
-function logLoginDebug(message, details = null) {
-  if (!isDev) return;
-  console.info(`[login-page] ${message}`, details ?? "");
-}
+const featuredProducts = [
+  "Kit postparto esencial",
+  "Almohadón ergonómico de lactancia",
+  "Bolso maternal hospitalario",
+];
 
-function getSafeAuthErrorFromQuery(errorCode) {
-  if (!errorCode) return "";
-  if (errorCode === "CredentialsSignin") return GENERIC_CREDENTIALS_ERROR;
-  return GENERIC_GOOGLE_ERROR;
-}
-
-export default function Home() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { isAuthenticated, loading: authLoading } = useAuth();
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleProviderEnabled, setGoogleProviderEnabled] = useState(false);
-  const [providersLoading, setProvidersLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [globalError, setGlobalError] = useState("");
-  const [ignoreAuthErrorParam, setIgnoreAuthErrorParam] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const authErrorFromQuery = getSafeAuthErrorFromQuery(searchParams.get("error"));
-  const resolvedGlobalError =
-    globalError || (ignoreAuthErrorParam ? "" : authErrorFromQuery);
-
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      router.replace("/tienda");
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadProviders() {
-      try {
-        const providers = await getProviders();
-        if (!isMounted) return;
-        setGoogleProviderEnabled(Boolean(providers?.google));
-      } catch {
-        if (!isMounted) return;
-        setGoogleProviderEnabled(false);
-      } finally {
-        if (isMounted) setProvidersLoading(false);
-      }
-    }
-
-    loadProviders();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  function validateField(name, value) {
-    if (name === "email") {
-      if (!value.trim()) return "El correo electronico es requerido";
-      if (!EMAIL_REGEX.test(value.trim()))
-        return "El formato del correo no es valido";
-    }
-    if (name === "password") {
-      if (!value) return "La contrasena es requerida";
-      if (value.length < 8)
-        return "La contrasena debe tener al menos 8 caracteres";
-    }
-    return "";
-  }
-
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setIgnoreAuthErrorParam(true);
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-    if (globalError) setGlobalError("");
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setIgnoreAuthErrorParam(true);
-    setGlobalError("");
-    setSuccess(false);
-    const normalizedEmail = formData.email.trim().toLowerCase();
-
-    const newErrors = {
-      email: validateField("email", normalizedEmail),
-      password: validateField("password", formData.password),
-    };
-
-    setErrors(newErrors);
-
-    if (newErrors.email || newErrors.password) {
-      return;
-    }
-
-    setLoading(true);
-    setSuccess(true);
-    e.currentTarget.elements.email.value = normalizedEmail;
-    logLoginDebug("Enviando formulario nativo de credenciales", {
-      email: normalizedEmail,
-    });
-    e.currentTarget.submit();
-  }
-
-  async function handleGoogleSignIn() {
-    setIgnoreAuthErrorParam(true);
-    setGlobalError("");
-    if (providersLoading) return;
-    if (!googleProviderEnabled) {
-      setGlobalError("El acceso con Google no esta disponible en este entorno.");
-      return;
-    }
-    setGoogleLoading(true);
-    try {
-      const result = await signInWithGoogle();
-      if (!result.ok) {
-        setGlobalError(
-          result.error || "No se pudo iniciar sesion con Google. Intenta nuevamente."
-        );
-      }
-    } catch {
-      setGlobalError(
-        "No se pudo iniciar sesion con Google. Intenta nuevamente."
-      );
-    } finally {
-      setGoogleLoading(false);
-    }
-  }
-
-  if (authLoading || isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <svg
-          className="animate-spin h-8 w-8 text-primary"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
-      </div>
-    );
-  }
-
+export default function HomePage() {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
-      {/* Theme Toggle */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
-
-      {/* Branding Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">
-          OBSTEDESIGN
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Bienvenido de nuevo a tu cuenta
+    <div className="bg-background text-foreground">
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-16 md:py-24">
+        <p className="inline-flex w-fit rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
+          Tienda obstetrica especializada
         </p>
-      </div>
+        <div className="max-w-3xl space-y-4">
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+            Todo lo que necesitás para acompañar el embarazo, parto y postparto.
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            En Obstedesign seleccionamos productos obstétricos confiables para profesionales, maternidades y familias.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button asChild size="lg">
+            <Link href="/tienda">Ver tienda</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg">
+            <Link href="/login">Ingresar a mi cuenta</Link>
+          </Button>
+        </div>
+      </section>
 
-      {/* Login Card */}
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Iniciar sesion</CardTitle>
-          <CardDescription>
-            Ingresa tus datos para acceder a tu cuenta
-          </CardDescription>
-        </CardHeader>
+      <section className="mx-auto grid w-full max-w-6xl gap-4 px-4 pb-14 md:grid-cols-3">
+        {featuredCategories.map((category) => (
+          <Card key={category.name}>
+            <CardHeader>
+              <CardTitle className="text-xl">{category.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{category.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </section>
 
-        <CardContent>
-          {success && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="mb-4 rounded-lg bg-green-100 dark:bg-green-900/30 px-4 py-3 text-sm text-green-800 dark:text-green-300"
-            >
-              Sesion iniciada correctamente.
-            </div>
-          )}
-
-          {resolvedGlobalError && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="mb-4 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive"
-            >
-              {resolvedGlobalError}
-            </div>
-          )}
-
-          <form
-            onSubmit={handleSubmit}
-            action="/api/auth/credentials-login"
-            method="POST"
-            className="space-y-4"
-            noValidate
-          >
-            <input type="hidden" name="callbackUrl" value="/tienda" />
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo electronico</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="usuario@correo.com"
-                value={formData.email}
-                onChange={handleChange}
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "email-error" : undefined}
-                disabled={loading}
-              />
-              {errors.email && (
-                <p id="email-error" className="text-sm text-destructive">
-                  {errors.email}
-                </p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Contrasena</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="***************"
-                value={formData.password}
-                onChange={handleChange}
-                aria-invalid={!!errors.password}
-                aria-describedby={
-                  errors.password ? "password-error" : undefined
-                }
-                disabled={loading}
-              />
-              {errors.password && (
-                <p id="password-error" className="text-sm text-destructive">
-                  {errors.password}
-                </p>
-              )}
-            </div>
-
-            {/* Remember + Forgot */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm">
-              <label className="flex items-center gap-2 text-muted-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  disabled={loading}
-                />
-                Recordarme
-              </label>
-              <Link
-                href="/recuperar-contrasena"
-                className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-                tabIndex={loading ? -1 : undefined}
-                aria-disabled={loading}
-              >
-                Olvidaste tu contrasena?
-              </Link>
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              className="w-full"
-              size="lg"
-              type="submit"
-              disabled={loading}
-              aria-busy={loading}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Cargando...
-                </span>
-              ) : (
-                "Iniciar sesion con correo"
-              )}
+      <section className="mx-auto w-full max-w-6xl px-4 pb-20">
+        <div className="rounded-2xl border bg-card p-6 md:p-8">
+          <h2 className="text-2xl font-semibold">Productos destacados de la semana</h2>
+          <ul className="mt-4 space-y-3 text-muted-foreground">
+            {featuredProducts.map((product) => (
+              <li key={product} className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
+                <span>{product}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/tienda">Explorar catálogo</Link>
             </Button>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                  o continuar con
-                </span>
-              </div>
-            </div>
-
-            {/* Google Button */}
-            <Button
-              variant="outline"
-              className="w-full"
-              size="lg"
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={
-                loading ||
-                googleLoading ||
-                providersLoading ||
-                !googleProviderEnabled
-              }
-              aria-busy={googleLoading || providersLoading}
-            >
-              {googleLoading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Conectando...
-                </span>
-              ) : providersLoading ? (
-                "Verificando Google..."
-              ) : !googleProviderEnabled ? (
-                "Google no disponible"
-              ) : (
-                <>
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  Iniciar sesion con Google
-                </>
-              )}
+            <Button asChild variant="secondary">
+              <Link href="/login">Soy cliente registrado</Link>
             </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Footer Note */}
-      <p className="mt-6 text-center text-xs text-muted-foreground max-w-sm">
-        Nota: Clientes y administradores ingresan desde esta misma pantalla. El
-        sistema identifica el rol despues del acceso.
-      </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

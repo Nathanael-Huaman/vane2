@@ -1,9 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { randomBytes } from "node:crypto";
-import { PrismaClient } from "../lib/generated/prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { createRuntimePrismaClient } from "../lib/testing/prisma-runtime";
 
 const TEST_CLIENTE_EMAIL = (
   process.env.TEST_CLIENTE_EMAIL || "cliente.prueba@obstedesign.local"
@@ -16,22 +13,7 @@ const TEST_ADMIN_EMAIL = (process.env.TEST_ADMIN_EMAIL || "admin.prueba@obstedes
   .toLowerCase();
 const SESSION_COOKIE_NAME = "authjs.session-token";
 
-function createAdapter(databaseUrl: string) {
-  const lower = databaseUrl.toLowerCase();
-  if (lower.startsWith("postgres://") || lower.startsWith("postgresql://")) {
-    return new PrismaPg(new Pool({ connectionString: databaseUrl }));
-  }
-  if (lower.startsWith("file:") || lower.startsWith("libsql:")) {
-    return new PrismaLibSql({ url: databaseUrl });
-  }
-  throw new Error(
-    "DATABASE_URL no soportada. Usa file:/libsql: para SQLite o postgres:/postgresql: para PostgreSQL."
-  );
-}
-
-const prisma = new PrismaClient({
-  adapter: createAdapter(process.env.DATABASE_URL || "file:./dev.db"),
-});
+const prisma = createRuntimePrismaClient();
 
 async function loginWithCredentials(
   page: import("@playwright/test").Page,
@@ -116,7 +98,7 @@ test.describe("Ticket 10 - Resolucion de rol post-login", () => {
     await loginWithCredentials(page, TEST_CLIENTE_EMAIL, `${TEST_CLIENTE_PASSWORD}__bad`);
 
     await expect(page.getByText("Credenciales invalidas")).toBeVisible();
-    await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/\?error=CredentialsSignin/, { timeout: 15_000 });
   });
 
   test("mantiene integridad de rol tras cambio de usuario en la misma sesion de navegador", async ({

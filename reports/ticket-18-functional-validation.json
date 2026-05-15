@@ -1,0 +1,133 @@
+{
+  "ticket": "18",
+  "name": "validacion funcional",
+  "generatedAt": "2026-05-08T14:02:52.742Z",
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "preconditions",
+      "area": "precondiciones",
+      "flow": "Usuarios de prueba disponibles para credenciales, roles y sesiones",
+      "command": "pnpm seed:test-auth-users",
+      "visibleOutcome": "La base local queda lista para ejecutar los flujos funcionales.",
+      "serverOutcome": "Existen usuarios cliente y administrador con rol y contrasena validos.",
+      "ok": true,
+      "durationMs": 3678,
+      "outputSnippet": "    \"createdAt\": \"2026-05-07T14:26:12.551Z\",\n    \"updatedAt\": \"2026-05-08T14:02:19.845Z\"\n  },\n  \"admin\": {\n    \"id\": \"cmovmexz80001px6n2mxhn8sg\",\n    \"email\": \"admin.prueba@obstedesign.local\",\n    \"name\": \"Admin Prueba\",\n    \"role\": \"administrador\",\n    \"createdAt\": \"2026-05-07T15:08:06.404Z\",\n    \"updatedAt\": \"2026-05-08T14:02:19.862Z\"\n  }\n}"
+    },
+    {
+      "id": "credentials-login",
+      "area": "login",
+      "flow": "Ingreso por credenciales con validacion de formato y password",
+      "command": "pnpm test:ticket-08:runtime",
+      "visibleOutcome": "El formulario puede conducir al acceso seguro con feedback minimo.",
+      "serverOutcome": "Las credenciales validas autentican y las invalidas se rechazan sin filtrar detalles.",
+      "ok": true,
+      "durationMs": 3226,
+      "outputSnippet": "  \u001b[32m✓\u001b[0m la contrasena correcta valida contra el hash\n  \u001b[32m✓\u001b[0m una contrasena incorrecta no valida contra el hash\n\n3. Validacion de entrada (server-side)\n  \u001b[32m✓\u001b[0m credenciales con formato valido pasan validacion\n  \u001b[32m✓\u001b[0m un correo invalido es rechazado\n  \u001b[32m✓\u001b[0m una contrasena corta es rechazada\n\n==================================================\nResultados: 8 pasaron, 0 fallaron\n\n\u001b[32mTicket 08 runtime validado correctamente.\u001b[0m"
+    },
+    {
+      "id": "google-login",
+      "area": "login",
+      "flow": "Ingreso con Google desde la pantalla principal",
+      "command": "pnpm test:ticket-09:e2e",
+      "visibleOutcome": "El boton de Google esta disponible y dispara la redireccion OAuth.",
+      "serverOutcome": "Auth.js mantiene el flujo del provider y el callback seguro para Google.",
+      "ok": true,
+      "durationMs": 6303,
+      "outputSnippet": "> frontend@0.1.0 test:ticket-09:e2e /Users/nathanaelmacbook/Desktop/Vane2/frontend\n> playwright test e2e/ticket-09-login-google.spec.ts --project=chromium\n\n\nRunning 2 tests using 1 worker\n\n  ✓  1 [chromium] › e2e/ticket-09-login-google.spec.ts:4:3 › Ticket 09 - Login con Google › Google queda disponible en la pantalla de login (828ms)\n  ✓  2 [chromium] › e2e/ticket-09-login-google.spec.ts:18:3 › Ticket 09 - Login con Google › inicia redireccion OAuth al hacer click en Google (2.1s)\n\n  2 passed (4.5s)"
+    },
+    {
+      "id": "post-login-role",
+      "area": "roles",
+      "flow": "Resolucion de rol despues del login",
+      "command": "pnpm test:ticket-10:runtime",
+      "visibleOutcome": "La UI puede diferenciar cliente y administrador sin ambiguedad.",
+      "serverOutcome": "El rol persiste de forma consistente para ambos usuarios de prueba.",
+      "ok": true,
+      "durationMs": 1467,
+      "outputSnippet": "  \u001b[32m✓\u001b[0m relectura de cliente existe por id\n  \u001b[32m✓\u001b[0m relectura de admin existe por id\n  \u001b[32m✓\u001b[0m contexto cliente mantiene rol 'cliente'\n  \u001b[32m✓\u001b[0m contexto admin mantiene rol 'administrador'\n\n3. Edge case de referencia inexistente\n  \u001b[32m✓\u001b[0m consulta de usuario inexistente retorna null (sin exponer datos extra)\n\n==================================================\nResultados: 10 pasaron, 0 fallaron\n\n\u001b[32mTicket 10 runtime validado correctamente.\u001b[0m"
+    },
+    {
+      "id": "persistent-session",
+      "area": "sesiones",
+      "flow": "Creacion y lectura de sesiones persistidas",
+      "command": "pnpm test:ticket-11:runtime",
+      "visibleOutcome": "La tienda puede recibir una sesion valida tras autenticacion.",
+      "serverOutcome": "Las sesiones quedan guardadas con token unico y expiracion futura.",
+      "ok": true,
+      "durationMs": 1363,
+      "outputSnippet": "\n2. Integridad de sesion persistida para acceso post-login\n  \u001b[32m✓\u001b[0m sesion cliente se persiste con token no vacio\n  \u001b[32m✓\u001b[0m sesion admin se persiste con token no vacio\n  \u001b[32m✓\u001b[0m sesiones cliente y admin usan tokens distintos\n  \u001b[32m✓\u001b[0m ambas sesiones quedan registradas para la tienda\n  \u001b[32m✓\u001b[0m todas las sesiones creadas tienen vencimiento futuro\n\n==================================================\nResultados: 11 pasaron, 0 fallaron\n\n\u001b[32mTicket 11 runtime validado correctamente.\u001b[0m"
+    },
+    {
+      "id": "ui-authorization",
+      "area": "autorizacion",
+      "flow": "Visibilidad UI por rol en tienda y perfil",
+      "command": "pnpm test:ticket-12:e2e",
+      "visibleOutcome": "Cliente y admin ven bloques distintos segun su rol.",
+      "serverOutcome": "La capa visual usa sesion y rol resueltos de forma segura.",
+      "ok": true,
+      "durationMs": 5021,
+      "outputSnippet": "> frontend@0.1.0 test:ticket-12:e2e /Users/nathanaelmacbook/Desktop/Vane2/frontend\n> playwright test e2e/ticket-12-ui-authorization.spec.ts --project=chromium --workers=1\n\n\nRunning 2 tests using 1 worker\n\n  ✓  1 [chromium] › e2e/ticket-12-ui-authorization.spec.ts:75:3 › Ticket 12 - Autorizacion en UI › cliente no ve bloques administrativos en tienda ni perfil (977ms)\n  ✓  2 [chromium] › e2e/ticket-12-ui-authorization.spec.ts:87:3 › Ticket 12 - Autorizacion en UI › administrador ve bloques administrativos en tienda y perfil (809ms)\n\n  2 passed (3.4s)"
+    },
+    {
+      "id": "backend-authorization",
+      "area": "autorizacion",
+      "flow": "Proteccion backend real en setup",
+      "command": "pnpm test:ticket-13:e2e",
+      "visibleOutcome": "Cliente recibe fallback neutro y admin accede al diagnostico.",
+      "serverOutcome": "Las acciones protegidas exigen rol administrador en servidor.",
+      "ok": true,
+      "durationMs": 4818,
+      "outputSnippet": "> frontend@0.1.0 test:ticket-13:e2e /Users/nathanaelmacbook/Desktop/Vane2/frontend\n> playwright test e2e/ticket-13-backend-protection.spec.ts --project=chromium --workers=1\n\n\nRunning 2 tests using 1 worker\n\n  ✓  1 [chromium] › e2e/ticket-13-backend-protection.spec.ts:75:3 › Ticket 13 - Proteccion backend › cliente recibe fallback neutro al entrar por acceso directo a setup (722ms)\n  ✓  2 [chromium] › e2e/ticket-13-backend-protection.spec.ts:86:3 › Ticket 13 - Proteccion backend › administrador puede entrar a la experiencia protegida de setup (571ms)\n\n  2 passed (2.9s)"
+    },
+    {
+      "id": "session-view-mode",
+      "area": "sesiones",
+      "flow": "Cambio entre vista cliente y administrador por sesion",
+      "command": "pnpm test:ticket-14:e2e",
+      "visibleOutcome": "El admin puede alternar de vista y la UI refleja el modo actual.",
+      "serverOutcome": "El viewMode se persiste por sesion sin alterar el rol real.",
+      "ok": true,
+      "durationMs": 7264,
+      "outputSnippet": "> frontend@0.1.0 test:ticket-14:e2e /Users/nathanaelmacbook/Desktop/Vane2/frontend\n> playwright test e2e/ticket-14-admin-view-mode.spec.ts --project=chromium --workers=1\n\n\nRunning 3 tests using 1 worker\n\n  ✓  1 [chromium] › e2e/ticket-14-admin-view-mode.spec.ts:75:3 › Ticket 14 - Cambio entre vista cliente y administrador › solo admins ven el selector de vista (745ms)\n  ✓  2 [chromium] › e2e/ticket-14-admin-view-mode.spec.ts:85:3 › Ticket 14 - Cambio entre vista cliente y administrador › admin cambia de vista y el modo persiste durante la sesion actual (2.2s)\n  ✓  3 [chromium] › e2e/ticket-14-admin-view-mode.spec.ts:112:3 › Ticket 14 - Cambio entre vista cliente y administrador › una nueva sesion de admin reinicia la vista por defecto (1.5s)\n\n  3 passed (5.7s)"
+    },
+    {
+      "id": "password-reset",
+      "area": "recuperacion",
+      "flow": "Solicitud y consumo del flujo de recuperacion",
+      "command": "pnpm test:ticket-15:runtime",
+      "visibleOutcome": "El flujo puede exponer mensajes minimos y completar el restablecimiento.",
+      "serverOutcome": "El token de recuperacion se valida y la contrasena puede actualizarse.",
+      "ok": true,
+      "durationMs": 1717,
+      "outputSnippet": "  action: 'auditPasswordResetEvent',\n  email: 'no.existe@obstedesign.local',\n  reason: 'neutral_response_for_unknown_account'\n}\n  \u001b[32m✓\u001b[0m correo inexistente retorna exito neutro\n  \u001b[32m✓\u001b[0m correo inexistente usa el mismo mensaje neutro\n  \u001b[32m✓\u001b[0m correo inexistente no crea token persistido\n\n==================================================\nResultados: 19 pasaron, 0 fallaron\n\n\u001b[32mTicket 15 runtime validado correctamente.\u001b[0m"
+    },
+    {
+      "id": "reset-security",
+      "area": "seguridad",
+      "flow": "Capas complementarias de seguridad para recuperacion",
+      "command": "pnpm test:ticket-16",
+      "visibleOutcome": "La UI deja preparado el feedback para enfriamiento y protecciones futuras.",
+      "serverOutcome": "El flujo integra backlog reusable de rate limiting y auditoria.",
+      "ok": true,
+      "durationMs": 821,
+      "outputSnippet": "4. Preparacion visual\n  \u001b[32m✓\u001b[0m formulario de solicitud anticipa enfriamiento futuro\n  \u001b[32m✓\u001b[0m formulario de restablecimiento anticipa proteccion por intentos\n\n5. Scripts\n  \u001b[32m✓\u001b[0m package.json expone validate:ticket-16\n  \u001b[32m✓\u001b[0m package.json expone test:ticket-16\n\n==================================================\nResultados: 13 pasaron, 0 fallaron\n\n\u001b[32mTicket 16 validado correctamente.\u001b[0m"
+    },
+    {
+      "id": "safe-feedback",
+      "area": "feedback",
+      "flow": "Mensajes de error y estados de carga en auth y recuperacion",
+      "command": "pnpm test:ticket-17",
+      "visibleOutcome": "Login y recuperacion muestran loading, exito y error de manera consistente.",
+      "serverOutcome": "Las respuestas de autenticacion se traducen a mensajes seguros y reutilizables.",
+      "ok": true,
+      "durationMs": 827,
+      "outputSnippet": "  \u001b[32m✓\u001b[0m auth-client usa mensajes compartidos\n  \u001b[32m✓\u001b[0m backend usa traductor seguro de errores auth\n  \u001b[32m✓\u001b[0m backend usa traductor seguro de errores 500\n\n4. Scripts\n  \u001b[32m✓\u001b[0m package.json expone validate:ticket-17\n  \u001b[32m✓\u001b[0m package.json expone test:ticket-17\n\n==================================================\nResultados: 13 pasaron, 0 fallaron\n\n\u001b[32mTicket 17 validado correctamente.\u001b[0m"
+    }
+  ]
+}

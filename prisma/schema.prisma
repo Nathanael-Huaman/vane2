@@ -8,23 +8,43 @@ enum Role {
   administrador
 }
 
+enum ViewMode {
+  cliente
+  administrador
+}
+
+enum BlogPostStatus {
+  borrador
+  publicado
+}
+
+enum ProductStatus {
+  active
+  draft
+  archived
+}
 datasource db {
   provider = "sqlite"
 }
 
 model Usuario {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String?
-  name          String?
-  image         String?
-  emailVerified DateTime?
-  role          Role      @default(cliente)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                      String    @id @default(cuid())
+  email                   String    @unique
+  passwordHash            String?
+  name                    String?
+  image                   String?
+  emailVerified           DateTime?
+  role                    Role      @default(cliente)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  emailVerificado         Boolean   @default(false)
+  tokenVerificacion       String?
+  tokenVerificacionExpira DateTime?
 
-  sesiones Sesion[]
-  cuentas  Account[]
+  sesiones                        Sesion[]
+  cuentas                         Account[]
+  emailVerificationResendAttempts EmailVerificationResendAttempt[]
+  blogPosts                       BlogPost[]
 
   @@map("usuarios")
 }
@@ -34,6 +54,7 @@ model Sesion {
   userId       String
   sessionToken String   @unique
   expiresAt    DateTime
+  viewMode     ViewMode?
   userAgent    String?
   ip           String?
   createdAt    DateTime @default(now())
@@ -71,4 +92,73 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("tokens_verificacion")
+}
+
+model EmailVerificationResendAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("email_verification_resend_attempts")
+}
+
+model BlogPost {
+  id             String         @id @default(cuid())
+  title          String
+  slug           String         @unique
+  excerpt        String?
+  content        String
+  status         BlogPostStatus @default(borrador)
+  seoTitle       String?
+  seoDescription String?
+  authorId       String?
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  author Usuario? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([publishedAt])
+  @@map("blog_posts")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@map("store_categories")
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  summary         String
+  description     String?
+  imageUrl        String?
+  priceMinorUnits Int
+  stockQuantity   Int           @default(0)
+  status          ProductStatus @default(draft)
+  sku             String?       @unique
+  featured        Boolean       @default(false)
+  categoryId      String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([status, featured])
+  @@index([status, createdAt])
+  @@index([categoryId, status])
+  @@map("store_products")
 }
