@@ -11,6 +11,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
 
+function normalizeText(value) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 let passed = 0;
 let failed = 0;
 
@@ -42,6 +46,7 @@ const credentialsModuleFile = resolveFirstExisting([
 
 const requiredFiles = [
   "app/page.js",
+  "app/login/page.js",
   "app/api/auth/credentials-login/route.js",
   "lib/actions/auth.js",
   "lib/auth/config.js",
@@ -52,11 +57,13 @@ for (const file of requiredFiles) {
   assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
 }
 
-const loginPage = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const loginPage = readFileSync(join(rootDir, "app/login/page.js"), "utf-8");
 const credentialsRoute = readFileSync(join(rootDir, "app/api/auth/credentials-login/route.js"), "utf-8");
 const authAction = readFileSync(join(rootDir, "lib/actions/auth.js"), "utf-8");
 const authConfig = readFileSync(join(rootDir, "lib/auth/config.js"), "utf-8");
 const credentialsModule = readFileSync(join(rootDir, credentialsModuleFile), "utf-8");
+const feedback = readFileSync(join(rootDir, "lib/auth/feedback.js"), "utf-8");
+const normalizedFeedback = normalizeText(feedback);
 
 section("2. Flujo de submit y loading en login");
 
@@ -71,7 +78,7 @@ assert("el boton submit refleja estado loading", loginPage.includes("LoadingButt
 assert(
   "muestra mensaje minimo de credenciales invalidas",
   loginPage.includes("AUTH_FEEDBACK_MESSAGES") &&
-    readFileSync(join(rootDir, "lib/auth/feedback.js"), "utf-8").includes("Credenciales invalidas. Intenta nuevamente.")
+    normalizedFeedback.includes("credenciales invalidas. intenta nuevamente.")
 );
 
 section("3. Validacion y respuesta segura en servidor");

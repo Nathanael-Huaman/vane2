@@ -11,6 +11,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
 
+function normalizeText(value) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 let passed = 0;
 let failed = 0;
 
@@ -86,8 +90,8 @@ assert("perfil tiene panel admin protegido", perfilPage.includes("<AdminOnly>"))
 assert("perfil tiene panel cliente protegido", perfilPage.includes("<ClienteOnly>"));
 assert(
   "mensaje de pantalla compartida permanece en login (criterio de ticket)",
-  readFileSync(join(rootDir, "app/page.js"), "utf-8").includes(
-    "Clientes y administradores ingresan desde esta misma pantalla"
+  normalizeText(readFileSync(join(rootDir, "app/login/page.js"), "utf-8")).includes(
+    "clientes y administradores ingresan desde esta misma pantalla"
   )
 );
 

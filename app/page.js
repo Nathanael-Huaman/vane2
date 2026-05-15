@@ -32,7 +32,7 @@ export default function HomePage() {
         </p>
         <div className="max-w-3xl space-y-4">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-            Todo lo que necesitás para acompañar el embarazo, parto y postparto.
+            Todo lo que necesitas para acompañar el embarazo, parto y postparto.
           </h1>
           <p className="text-lg text-muted-foreground">
             En Obstedesign seleccionamos productos obstétricos confiables para profesionales, maternidades y familias.

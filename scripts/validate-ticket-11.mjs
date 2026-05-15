@@ -41,7 +41,7 @@ for (const file of requiredFiles) {
 	assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
 }
 
-const loginPage = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const loginPage = readFileSync(join(rootDir, "app/login/page.js"), "utf-8");
 const tiendaPage = readFileSync(join(rootDir, "app/tienda/page.js"), "utf-8");
 const authClient = readFileSync(
 	join(rootDir, "lib/auth/auth-client.js"),

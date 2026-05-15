@@ -35,6 +35,7 @@ const requiredFiles = [
   "lib/auth/adapter.js",
   "lib/auth/feedback.js",
   "app/page.js",
+  "app/login/page.js",
 ];
 for (const file of requiredFiles) {
   assert(`archivo existe: ${file}`, existsSync(join(rootDir, file)));
@@ -131,7 +132,7 @@ assert(
 
 section("6. Flujo de UI para mostrar error de colision");
 
-const loginPage = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const loginPage = readFileSync(join(rootDir, "app/login/page.js"), "utf-8");
 
 assert(
   "pagina usa getSafeAuthErrorFromQuery para errores",

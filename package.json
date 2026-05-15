@@ -83,7 +83,9 @@
     "test:ticket-17": "pnpm validate:ticket-17",
     "test:ticket-18": "pnpm validate:ticket-18 && node scripts/test-ticket-18-functional.mjs",
     "test:ticket-19:e2e": "playwright test e2e/ticket-19-bdd-validation.spec.ts --project=chromium --workers=1",
-    "test:ticket-19": "pnpm seed:test-auth-users && pnpm validate:ticket-19 && pnpm test:ticket-19:e2e"
+    "test:ticket-19": "pnpm seed:test-auth-users && pnpm validate:ticket-19 && pnpm test:ticket-19:e2e",
+    "test:blog-foundation": "tsx scripts/test-blog-foundation.ts",
+    "test:blog-content": "tsx scripts/test-blog-content.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

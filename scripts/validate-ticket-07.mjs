@@ -11,6 +11,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
 
+function normalizeText(value) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 let passed = 0;
 let failed = 0;
 
@@ -32,6 +36,7 @@ section("1. Estructura de archivos del ticket");
 
 const requiredFiles = [
   "app/page.js",
+  "app/login/page.js",
   "app/recuperar-contrasena/page.js",
   "components/auth-google-button.jsx",
   "components/theme-toggle.jsx",
@@ -48,21 +53,22 @@ for (const file of requiredFiles) {
 
 section("2. Contrato visual de login");
 
-const loginPage = readFileSync(join(rootDir, "app/page.js"), "utf-8");
+const loginPage = readFileSync(join(rootDir, "app/login/page.js"), "utf-8");
+const normalizedLoginPage = normalizeText(loginPage);
 const googleProviderHook = readFileSync(join(rootDir, "hooks/use-google-provider.js"), "utf-8");
 const googleButton = readFileSync(join(rootDir, "components/auth-google-button.jsx"), "utf-8");
 const feedback = readFileSync(join(rootDir, "lib/auth/feedback.js"), "utf-8");
 
 assert("muestra branding OBSTEDESIGN", loginPage.includes("OBSTEDESIGN"));
-assert("renderiza campo correo", loginPage.includes("Correo electronico"));
-assert("renderiza campo contrasena", loginPage.includes("Contrasena"));
+assert("renderiza campo correo", normalizedLoginPage.includes("correo electronico"));
+assert("renderiza campo contrasena", normalizedLoginPage.includes("contrasena"));
 assert(
   "renderiza boton iniciar sesion con correo",
-  loginPage.includes("Iniciar sesion con correo")
+  normalizedLoginPage.includes("iniciar sesion con correo")
 );
 assert(
   "renderiza boton iniciar sesion con Google",
-  loginPage.includes("Iniciar sesion con Google")
+  normalizedLoginPage.includes("iniciar sesion con google")
 );
 assert(
   "incluye enlace a recuperacion de contrasena",
@@ -70,7 +76,7 @@ assert(
 );
 assert(
   "incluye nota de pantalla compartida para cliente y administrador",
-  loginPage.includes("Clientes y administradores ingresan desde esta misma pantalla")
+  normalizedLoginPage.includes("clientes y administradores ingresan desde esta misma pantalla")
 );
 
 section("3. Seguridad y UX del flujo de Google");
