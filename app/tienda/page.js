@@ -1,155 +1,102 @@
-import { Store, Sparkles, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
-import { AdminViewModeSwitcher } from "@/components/admin-view-mode-switcher";
-import { SignOutButton } from "@/components/sign-out-button";
-import { PageStateCard } from "@/components/auth/page-state-card";
-import { AdminOnly, ClienteOnly } from "@/components/role-guard";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import Image from "next/image";
+import Link from "next/link";
+import { getPublicCatalogProducts } from "@/lib/server/store/catalog";
 import { Badge } from "@/components/ui/badge";
-import { resolvePageAuthContext } from "@/lib/server/session";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+
+function ProductImage({ product }) {
+	if (product.hasImage) {
+		return (
+			<Image
+				src={product.imageUrl}
+				alt={product.name}
+				width={640}
+				height={440}
+				unoptimized
+				className="h-44 w-full rounded-md object-cover"
+			/>
+		);
+	}
+
+	return (
+		<div
+			className="flex h-44 w-full items-center justify-center rounded-md border border-dashed bg-muted/40 text-sm text-muted-foreground"
+			aria-label={product.imageFallbackLabel || "Imagen no disponible"}
+		>
+			{product.imageFallbackLabel || "Imagen no disponible"}
+		</div>
+	);
+}
 
 export default async function TiendaPage() {
-  // Contrato ticket-12: await getAuthenticatedSession()
-  // Contrato ticket-14: const isAdminView = isAdmin && sessionView.viewMode === VIEW_MODE_ADMINISTRADOR
-  const {
-    user,
-    isAuthenticated,
-    isAdmin,
-    hasAuthError,
-    sessionView,
-    isAdminView,
-    isClientView,
-  } = await resolvePageAuthContext();
+	const products = await getPublicCatalogProducts();
 
-  if (hasAuthError) {
-    return (
-      <PageStateCard
-        heading="Entrada a la tienda"
-        Icon={AlertTriangle}
-        iconTone="destructive"
-        cardTitle="No se pudo cargar la tienda"
-        cardDescription="Ocurrio un problema al validar tu sesion."
-        body="Intenta nuevamente en unos instantes."
-        ctaLabel="Volver al inicio"
-        ctaHref="/"
-        ctaVariant="outline"
-      />
-    );
-  }
+	return (
+		<div className="min-h-screen bg-background p-8">
+			<div className="mx-auto max-w-6xl space-y-6">
+				<header className="space-y-2">
+					<h1 className="text-3xl font-bold tracking-tight text-primary">
+						Tienda Obstedesign
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Explora nuestro catálogo público de productos activos.
+					</p>
+				</header>
 
-  if (!isAuthenticated) {
-    return (
-      <PageStateCard
-        heading="Tienda Obstedesign"
-        Icon={Store}
-        cardTitle="Sesion no iniciada"
-        cardDescription="Inicia sesion para entrar a la tienda."
-        ctaLabel="Iniciar sesion"
-        ctaHref="/"
-      />
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
-              Tienda Obstedesign
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Bienvenido, {user?.email}. Tu experiencia fue cargada segun tu rol.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant={isAdmin ? "default" : "secondary"}>
-              {isAdmin ? "administrador" : "cliente"}
-            </Badge>
-            {isAdmin && (
-              <Badge variant="outline">
-                {isAdminView ? "vista administrador" : "vista cliente"}
-              </Badge>
-            )}
-            <SignOutButton className="w-auto" />
-          </div>
-        </header>
-
-        {sessionView.canToggleViewMode && (
-          <AdminViewModeSwitcher currentViewMode={sessionView.viewMode} />
-        )}
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle>Catalogo principal</CardTitle>
-            </div>
-            <CardDescription>
-              Seccion compartida para clientes y administradores.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Desde aqui ambos roles pueden explorar la tienda y continuar con su flujo.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* <AdminOnly> */}
-        {/* <AdminOnly role={user.role}> */}
-        <AdminOnly role={isAdminView ? "administrador" : user.role}>
-          {isAdminView && (
-            <Card className="border-primary/50">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-primary" aria-hidden="true" />
-                  <CardTitle>Opciones extra de administrador</CardTitle>
-                </div>
-                <CardDescription>
-                  Solo visible para usuarios con rol administrador.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md bg-primary/5 p-3 text-sm text-muted-foreground">
-                  Aqui se habilitan acciones administrativas dentro de la misma experiencia de tienda.
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </AdminOnly>
-
-        {/* <ClienteOnly> */}
-        {/* <ClienteOnly role={user.role}> */}
-        <ClienteOnly role={isClientView ? "cliente" : user.role}>
-          {isClientView && (
-            <Card className="border-secondary/40">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-secondary-foreground" aria-hidden="true" />
-                  <CardTitle>Experiencia cliente activa</CardTitle>
-                </div>
-                {isAdmin && (
-                  <CardDescription>
-                    Estas navegando como cliente dentro de tu sesion de administrador.
-                  </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Estas en la vista base de compra. Las opciones administrativas se
-                  mantienen ocultas en esta experiencia.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </ClienteOnly>
-      </div>
-    </div>
-  );
+				{products.length === 0 ? (
+					<Card>
+						<CardHeader>
+							<CardTitle>Sin productos publicados</CardTitle>
+							<CardDescription>
+								Todavía no hay productos activos para mostrar en la tienda.
+							</CardDescription>
+						</CardHeader>
+					</Card>
+				) : (
+					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+						{products.map((product) => (
+							<Card key={product.id} className="overflow-hidden">
+								<CardContent className="space-y-3 p-4">
+									<ProductImage product={product} />
+									<div className="space-y-1">
+										<p className="text-xs uppercase tracking-wide text-muted-foreground">
+											{product.category.name}
+										</p>
+										<h2 className="text-lg font-semibold text-foreground">
+											{product.name}
+										</h2>
+										<p className="line-clamp-2 text-sm text-muted-foreground">
+											{product.summary}
+										</p>
+									</div>
+									<div className="flex items-center justify-between gap-2">
+										<span className="font-medium text-primary">
+											{product.priceLabel}
+										</span>
+										<Badge
+											variant={product.isOutOfStock ? "secondary" : "default"}
+										>
+											{product.availabilityLabel}
+										</Badge>
+									</div>
+									<Link
+										href={`/tienda/${product.slug}`}
+										className="inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
+									>
+										Ver detalle
+									</Link>
+								</CardContent>
+							</Card>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }
