@@ -13,6 +13,16 @@ enum ViewMode {
   administrador
 }
 
+enum BlogPostStatus {
+  borrador
+  publicado
+}
+
+enum ProductStatus {
+  active
+  draft
+  archived
+}
 datasource db {
   provider = "sqlite"
 }
@@ -34,6 +44,7 @@ model Usuario {
   sesiones                        Sesion[]
   cuentas                         Account[]
   emailVerificationResendAttempts EmailVerificationResendAttempt[]
+  blogPosts                       BlogPost[]
 
   @@map("usuarios")
 }
@@ -92,4 +103,62 @@ model EmailVerificationResendAttempt {
 
   @@index([userId, createdAt])
   @@map("email_verification_resend_attempts")
+}
+
+model BlogPost {
+  id             String         @id @default(cuid())
+  title          String
+  slug           String         @unique
+  excerpt        String?
+  content        String
+  status         BlogPostStatus @default(borrador)
+  seoTitle       String?
+  seoDescription String?
+  authorId       String?
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  author Usuario? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([publishedAt])
+  @@map("blog_posts")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@map("store_categories")
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  summary         String
+  description     String?
+  imageUrl        String?
+  priceMinorUnits Int
+  stockQuantity   Int           @default(0)
+  status          ProductStatus @default(draft)
+  sku             String?       @unique
+  featured        Boolean       @default(false)
+  categoryId      String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([status, featured])
+  @@index([status, createdAt])
+  @@index([categoryId, status])
+  @@map("store_products")
 }
