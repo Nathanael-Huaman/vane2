@@ -18,6 +18,12 @@ enum BlogPostStatus {
   publicado
 }
 
+enum ProductStatus {
+  active
+  draft
+  archived
+}
+
 datasource db {
   provider = "sqlite"
 }
@@ -119,4 +125,41 @@ model BlogPost {
   @@index([status, publishedAt])
   @@index([publishedAt])
   @@map("blog_posts")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@map("store_categories")
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  summary         String
+  description     String?
+  imageUrl        String?
+  priceMinorUnits Int
+  stockQuantity   Int           @default(0)
+  status          ProductStatus @default(draft)
+  sku             String?       @unique
+  featured        Boolean       @default(false)
+  categoryId      String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([status, featured])
+  @@index([status, createdAt])
+  @@index([categoryId, status])
+  @@map("store_products")
 }
