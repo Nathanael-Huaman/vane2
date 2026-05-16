@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,285 +21,303 @@ import { useGoogleProvider } from "@/hooks/use-google-provider";
 import { signInWithGoogle } from "@/lib/auth/auth-client";
 import { AUTH_FEEDBACK_MESSAGES } from "@/lib/auth/feedback";
 import {
-  normalizeEmail,
-  validateEmailInput,
-  validatePasswordConfirmation,
-  validatePasswordInput,
+	normalizeEmail,
+	validateEmailInput,
+	validatePasswordConfirmation,
+	validatePasswordInput,
 } from "@/lib/auth/client-validation";
 
 export default function RegistroPage() {
-  const router = useRouter();
-  const { googleProviderEnabled, providersLoading } = useGoogleProvider();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [globalError, setGlobalError] = useState("");
+	const router = useRouter();
+	const { googleProviderEnabled, providersLoading } = useGoogleProvider();
+	const [formData, setFormData] = useState({
+		email: "",
+		password: "",
+		confirmPassword: "",
+	});
+	const emailInputRef = useRef(null);
+	const passwordInputRef = useRef(null);
+	const confirmPasswordInputRef = useRef(null);
+	const [errors, setErrors] = useState({});
+	const [loading, setLoading] = useState(false);
+	const [googleLoading, setGoogleLoading] = useState(false);
+	const [globalError, setGlobalError] = useState("");
 
-  function validateFields(data) {
-    const newErrors = {};
+	function validateFields(data) {
+		const newErrors = {};
 
-    const emailError = validateEmailInput(data.email);
-    const passwordError = validatePasswordInput(data.password);
-    const confirmPasswordError = validatePasswordConfirmation(
-      data.password,
-      data.confirmPassword
-    );
+		const emailError = validateEmailInput(data.email);
+		const passwordError = validatePasswordInput(data.password);
+		const confirmPasswordError = validatePasswordConfirmation(
+			data.password,
+			data.confirmPassword,
+		);
 
-    if (emailError) newErrors.email = emailError;
-    if (passwordError) newErrors.password = passwordError;
-    if (confirmPasswordError) newErrors.confirmPassword = confirmPasswordError;
+		if (emailError) newErrors.email = emailError;
+		if (passwordError) newErrors.password = passwordError;
+		if (confirmPasswordError) newErrors.confirmPassword = confirmPasswordError;
 
-    return newErrors;
-  }
+		return newErrors;
+	}
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-    if (globalError) setGlobalError("");
-  }
+	function handleChange(e) {
+		const { name, value } = e.target;
+		setFormData((prev) => ({ ...prev, [name]: value }));
+		if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+		if (globalError) setGlobalError("");
+	}
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setGlobalError("");
+	async function handleSubmit(e) {
+		e.preventDefault();
+		setGlobalError("");
 
-    const normalizedData = {
-      ...formData,
-      email: normalizeEmail(formData.email),
-    };
+		const submittedData = Object.fromEntries(new FormData(e.currentTarget));
+		const normalizedData = {
+			email: normalizeEmail(
+				String(emailInputRef.current?.value || submittedData.email || ""),
+			),
+			password: String(
+				passwordInputRef.current?.value || submittedData.password || "",
+			),
+			confirmPassword: String(
+				confirmPasswordInputRef.current?.value ||
+					submittedData.confirmPassword ||
+					"",
+			),
+		};
 
-    const newErrors = validateFields(normalizedData);
-    setErrors(newErrors);
+		setFormData(normalizedData);
 
-    if (Object.keys(newErrors).length > 0) {
-      return;
-    }
+		const newErrors = validateFields(normalizedData);
+		setErrors(newErrors);
 
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/registro", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: normalizedData.email,
-          password: normalizedData.password,
-          confirmPassword: normalizedData.confirmPassword,
-        }),
-      });
+		if (Object.keys(newErrors).length > 0) {
+			return;
+		}
 
-      if (res.status === 201) {
-        router.push(
-          `/registro/confirmacion?email=${encodeURIComponent(normalizedData.email)}`
-        );
-        return;
-      }
+		setLoading(true);
+		try {
+			const res = await fetch("/api/auth/registro", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					email: normalizedData.email,
+					password: normalizedData.password,
+					confirmPassword: normalizedData.confirmPassword,
+				}),
+			});
 
-      const data = await res.json().catch(() => ({}));
+			if (res.status === 201) {
+				router.push(
+					`/registro/confirmacion?email=${encodeURIComponent(normalizedData.email)}`,
+				);
+				return;
+			}
 
-      if (res.status === 409) {
-        setGlobalError(data.error || AUTH_FEEDBACK_MESSAGES.registroError);
-        setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
-        return;
-      }
+			const data = await res.json().catch(() => ({}));
 
-      setGlobalError(AUTH_FEEDBACK_MESSAGES.registroError);
-      setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
-    } catch {
-      setGlobalError(AUTH_FEEDBACK_MESSAGES.registroError);
-      setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
-    } finally {
-      setLoading(false);
-    }
-  }
+			if (res.status === 409) {
+				setGlobalError(data.error || AUTH_FEEDBACK_MESSAGES.registroError);
+				setFormData({ ...normalizedData, password: "", confirmPassword: "" });
+				return;
+			}
 
-  async function handleGoogleSignIn() {
-    setGlobalError("");
-    if (providersLoading) return;
-    if (!googleProviderEnabled) {
-      setGlobalError(AUTH_FEEDBACK_MESSAGES.googleUnavailable);
-      return;
-    }
-    setGoogleLoading(true);
-    try {
-      const result = await signInWithGoogle();
-      if (!result.ok) {
-        setGlobalError(result.error || AUTH_FEEDBACK_MESSAGES.googleError);
-      }
-    } catch {
-      setGlobalError(AUTH_FEEDBACK_MESSAGES.googleError);
-    } finally {
-      setGoogleLoading(false);
-    }
-  }
+			setGlobalError(AUTH_FEEDBACK_MESSAGES.registroError);
+			setFormData({ ...normalizedData, password: "", confirmPassword: "" });
+		} catch {
+			setGlobalError(AUTH_FEEDBACK_MESSAGES.registroError);
+			setFormData({ ...normalizedData, password: "", confirmPassword: "" });
+		} finally {
+			setLoading(false);
+		}
+	}
 
-  return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
+	async function handleGoogleSignIn() {
+		setGlobalError("");
+		if (providersLoading) return;
+		if (!googleProviderEnabled) {
+			setGlobalError(AUTH_FEEDBACK_MESSAGES.googleUnavailable);
+			return;
+		}
+		setGoogleLoading(true);
+		try {
+			const result = await signInWithGoogle();
+			if (!result.ok) {
+				setGlobalError(result.error || AUTH_FEEDBACK_MESSAGES.googleError);
+			}
+		} catch {
+			setGlobalError(AUTH_FEEDBACK_MESSAGES.googleError);
+		} finally {
+			setGoogleLoading(false);
+		}
+	}
 
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">
-          OBSTEDESIGN
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Crea tu cuenta y empieza a explorar
-        </p>
-      </div>
+	return (
+		<div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
+			<div className="absolute top-4 right-4">
+				<ThemeToggle />
+			</div>
 
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Crear una cuenta</CardTitle>
-          <CardDescription>
-            Ingresa tus datos para registrarte
-          </CardDescription>
-        </CardHeader>
+			<div className="mb-8 text-center">
+				<h1 className="text-3xl font-bold tracking-tight text-primary">
+					OBSTEDESIGN
+				</h1>
+				<p className="mt-2 text-muted-foreground">
+					Crea tu cuenta y empieza a explorar
+				</p>
+			</div>
 
-        <CardContent>
-          {globalError && (
-            <AuthFeedbackBanner
-              tone="error"
-              title="No se pudo crear la cuenta"
-              message={globalError}
-              description="Verifica tus datos o intenta nuevamente."
-              className="mb-4"
-            />
-          )}
+			<Card className="w-full max-w-md">
+				<CardHeader className="text-center">
+					<CardTitle>Crear una cuenta</CardTitle>
+					<CardDescription>Ingresa tus datos para registrarte</CardDescription>
+				</CardHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo electronico</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="usuario@correo.com"
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleChange}
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "email-error" : undefined}
-                disabled={loading}
-              />
-              {errors.email && (
-                <p
-                  id="email-error"
-                  className="text-sm text-destructive"
-                  aria-live="polite"
-                >
-                  {errors.email}
-                </p>
-              )}
-            </div>
+				<CardContent>
+					{globalError && (
+						<AuthFeedbackBanner
+							tone="error"
+							title="No se pudo crear la cuenta"
+							message={globalError}
+							description="Verifica tus datos o intenta nuevamente."
+							className="mb-4"
+						/>
+					)}
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Contrasena</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Minimo 8 caracteres"
-                autoComplete="new-password"
-                value={formData.password}
-                onChange={handleChange}
-                aria-invalid={!!errors.password}
-                aria-describedby={errors.password ? "password-error" : undefined}
-                disabled={loading}
-              />
-              {errors.password && (
-                <p
-                  id="password-error"
-                  className="text-sm text-destructive"
-                  aria-live="polite"
-                >
-                  {errors.password}
-                </p>
-              )}
-            </div>
+					<form onSubmit={handleSubmit} className="space-y-4" noValidate>
+						<div className="space-y-2">
+							<Label htmlFor="email">Correo electronico</Label>
+							<Input
+								ref={emailInputRef}
+								id="email"
+								name="email"
+								type="email"
+								placeholder="usuario@correo.com"
+								autoComplete="email"
+								value={formData.email}
+								onChange={handleChange}
+								aria-invalid={!!errors.email}
+								aria-describedby={errors.email ? "email-error" : undefined}
+								disabled={loading}
+							/>
+							{errors.email && (
+								<p
+									id="email-error"
+									className="text-sm text-destructive"
+									aria-live="polite"
+								>
+									{errors.email}
+								</p>
+							)}
+						</div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar contrasena</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="Repite tu contrasena"
-                autoComplete="new-password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                aria-invalid={!!errors.confirmPassword}
-                aria-describedby={
-                  errors.confirmPassword ? "confirm-password-error" : undefined
-                }
-                disabled={loading}
-              />
-              {errors.confirmPassword && (
-                <p
-                  id="confirm-password-error"
-                  className="text-sm text-destructive"
-                  aria-live="polite"
-                >
-                  {errors.confirmPassword}
-                </p>
-              )}
-            </div>
+						<div className="space-y-2">
+							<Label htmlFor="password">Contrasena</Label>
+							<Input
+								ref={passwordInputRef}
+								id="password"
+								name="password"
+								type="password"
+								placeholder="Minimo 8 caracteres"
+								autoComplete="new-password"
+								value={formData.password}
+								onChange={handleChange}
+								aria-invalid={!!errors.password}
+								aria-describedby={
+									errors.password ? "password-error" : undefined
+								}
+								disabled={loading}
+							/>
+							{errors.password && (
+								<p
+									id="password-error"
+									className="text-sm text-destructive"
+									aria-live="polite"
+								>
+									{errors.password}
+								</p>
+							)}
+						</div>
 
-            <Button
-              className="w-full"
-              size="lg"
-              type="submit"
-              disabled={loading}
-              aria-busy={loading}
-            >
-              {loading ? (
-                <LoadingButtonContent
-                  label={AUTH_FEEDBACK_MESSAGES.registroLoading}
-                />
-              ) : (
-                "Crear cuenta"
-              )}
-            </Button>
+						<div className="space-y-2">
+							<Label htmlFor="confirmPassword">Confirmar contrasena</Label>
+							<Input
+								ref={confirmPasswordInputRef}
+								id="confirmPassword"
+								name="confirmPassword"
+								type="password"
+								placeholder="Repite tu contrasena"
+								autoComplete="new-password"
+								value={formData.confirmPassword}
+								onChange={handleChange}
+								aria-invalid={!!errors.confirmPassword}
+								aria-describedby={
+									errors.confirmPassword ? "confirm-password-error" : undefined
+								}
+								disabled={loading}
+							/>
+							{errors.confirmPassword && (
+								<p
+									id="confirm-password-error"
+									className="text-sm text-destructive"
+									aria-live="polite"
+								>
+									{errors.confirmPassword}
+								</p>
+							)}
+						</div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">o</span>
-              </div>
-            </div>
+						<Button
+							className="w-full"
+							size="lg"
+							type="submit"
+							disabled={loading}
+							aria-busy={loading}
+						>
+							{loading ? (
+								<LoadingButtonContent
+									label={AUTH_FEEDBACK_MESSAGES.registroLoading}
+								/>
+							) : (
+								"Crear cuenta"
+							)}
+						</Button>
 
-            <AuthGoogleButton
-              onClick={handleGoogleSignIn}
-              loading={googleLoading}
-              providersLoading={providersLoading}
-              googleProviderEnabled={googleProviderEnabled}
-              disabled={
-                loading ||
-                googleLoading ||
-                providersLoading ||
-                !googleProviderEnabled
-              }
-              idleLabel="Registrarse con Google"
-            />
-          </form>
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<span className="w-full border-t" />
+							</div>
+							<div className="relative flex justify-center text-xs uppercase">
+								<span className="bg-card px-2 text-muted-foreground">o</span>
+							</div>
+						</div>
 
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            ¿Ya tienes cuenta?{" "}
-            <Link
-              href="/login"
-              className="text-primary underline underline-offset-4 hover:text-primary/80 cursor-pointer"
-            >
-              Inicia sesión
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+						<AuthGoogleButton
+							onClick={handleGoogleSignIn}
+							loading={googleLoading}
+							providersLoading={providersLoading}
+							googleProviderEnabled={googleProviderEnabled}
+							disabled={
+								loading ||
+								googleLoading ||
+								providersLoading ||
+								!googleProviderEnabled
+							}
+							idleLabel="Registrarse con Google"
+						/>
+					</form>
+
+					<p className="mt-4 text-center text-sm text-muted-foreground">
+						¿Ya tienes cuenta?{" "}
+						<Link
+							href="/login"
+							className="text-primary underline underline-offset-4 hover:text-primary/80 cursor-pointer"
+						>
+							Inicia sesión
+						</Link>
+					</p>
+				</CardContent>
+			</Card>
+		</div>
+	);
 }
