@@ -27,10 +27,10 @@ async function loginWithCredentials(
 	email: string,
 	password: string,
 ) {
-	await page.goto("/");
-	await page.getByLabel("Correo electronico").fill(email);
-	await page.getByLabel("Contrasena").fill(password);
-	await page.getByRole("button", { name: "Iniciar sesion con correo" }).click();
+	await page.goto("/login");
+	await page.getByLabel("Correo electrónico").fill(email);
+	await page.getByLabel("Contraseña").fill(password);
+	await page.getByRole("button", { name: "Iniciar sesión con correo" }).click();
 }
 
 async function seedAuthenticatedSession(
@@ -129,7 +129,9 @@ test.describe("Ticket 11 - Redireccionamiento y entrada a la tienda", () => {
 		await seedAuthenticatedSession(page, TEST_CLIENTE_EMAIL);
 		await page.goto("/tienda");
 		await expect(page.getByText("Tienda Obstedesign")).toBeVisible();
-		await expect(page.getByText("Experiencia cliente activa")).toHaveCount(0);
+		await expect(
+			page.getByText("Selector de vista del administrador"),
+		).toHaveCount(0);
 		await expect(page.getByText("Opciones extra de administrador")).toHaveCount(
 			0,
 		);
