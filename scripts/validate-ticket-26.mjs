@@ -89,11 +89,17 @@ assert("use-view-mode.js consume API", useViewModeContent.includes("/api/session
 section("6. API route view-mode");
 
 const apiRouteContent = readFileSync(join(rootDir, "app/api/session/view-mode/route.js"), "utf-8");
+const usesQuietPersistedSession =
+  apiRouteContent.includes("getOptionalPersistedSession") &&
+  apiRouteContent.includes("await getOptionalPersistedSession()") &&
+  apiRouteContent.includes("if (!persistedSession)") &&
+  apiRouteContent.includes("viewMode: null");
 
 assert(
-  "API route usa sesion autenticada",
+  "API route resuelve contexto de sesion persistida de forma segura",
   apiRouteContent.includes("auth()") ||
-    apiRouteContent.includes("getCurrentPersistedSession")
+    apiRouteContent.includes("getCurrentPersistedSession") ||
+    usesQuietPersistedSession
 );
 assert("API route retorna viewMode", apiRouteContent.includes("viewMode"));
 assert("API route usa NextResponse", apiRouteContent.includes("NextResponse"));

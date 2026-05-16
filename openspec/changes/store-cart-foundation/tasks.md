@@ -140,38 +140,38 @@ Every apply handoff MUST record:
 
 ### B0. Preflight
 
-- [ ] Start from PR A applied.
-- [ ] Read Next.js 16 forms/server-action docs before route/component edits.
-- [ ] Confirm product detail and cart page scope: no navbar count, no catalog-card add buttons.
+- [x] Start from PR A applied.
+- [x] Read Next.js 16 forms/server-action docs before route/component edits.
+- [x] Confirm product detail and cart page scope: no navbar count, no catalog-card add buttons.
 
 ### B1. RED — UI validator and E2E skeleton
 
-- [ ] Extend `scripts/validate-store-cart-foundation.mjs` for PR B expectations:
+- [x] Extend `scripts/validate-store-cart-foundation.mjs` for PR B expectations:
   - `app/tienda/[slug]/add-to-cart-form.js` or equivalent;
   - `app/carrito/page.js`;
   - cart page actions/forms;
   - `e2e/store-cart-foundation.spec.ts`.
-- [ ] Add `e2e/store-cart-foundation.spec.ts` with failing scenarios:
+- [x] Add `e2e/store-cart-foundation.spec.ts` with failing scenarios:
   - visitor adds in-stock product from detail page;
   - `/carrito` displays item and subtotal;
   - visitor updates quantity;
   - visitor removes item;
   - out-of-stock product cannot be added.
-- [ ] Run validator and targeted E2E, record RED failures.
+- [x] Run validator and targeted E2E, record RED failures.
 
 ### B2. GREEN — product detail add-to-cart UI
 
-- [ ] Update `app/tienda/[slug]/page.js` to render add-to-cart UI for in-stock active products.
-- [ ] Render unavailable messaging for active out-of-stock products.
-- [ ] Create small client component only if needed for pending/error state (`useActionState`).
-- [ ] Ensure form posts `productId` and quantity to `addToCartAction`.
+- [x] Update `app/tienda/[slug]/page.js` to render add-to-cart UI for in-stock active products.
+- [x] Render unavailable messaging for active out-of-stock products.
+- [x] Create small client component only if needed for pending/error state (`useActionState`).
+- [x] Ensure form posts `productId` and quantity to `addToCartAction`.
 
 ### B3. GREEN — `/carrito` page
 
-- [ ] Add `app/carrito/page.js`.
-- [ ] Read current cart summary without creating a new cart on page load.
-- [ ] Render empty state with link back to `/tienda`.
-- [ ] Render cart item rows with:
+- [x] Add `app/carrito/page.js`.
+- [x] Read current cart summary without creating a new cart on page load.
+- [x] Render empty state with link back to `/tienda`.
+- [x] Render cart item rows with:
   - product link/name;
   - unit price;
   - quantity update form;
@@ -179,28 +179,29 @@ Every apply handoff MUST record:
   - line total;
   - subtotal;
   - clear cart form.
-- [ ] Keep checkout CTA out of scope or render explicit future-placeholder text without flow.
+- [x] Keep checkout CTA out of scope or render explicit future-placeholder text without flow.
 
 ### B4. TRIANGULATE — UI edge cases
 
-- [ ] Confirm active out-of-stock product detail remains visible but not addable.
-- [ ] Confirm quantity input max reflects stock.
-- [ ] Confirm invalid server-action response displays a safe message.
-- [ ] Confirm empty cart after remove/clear.
+- [x] Confirm active out-of-stock product detail remains visible but not addable.
+- [x] Confirm quantity input max reflects stock.
+- [x] Confirm invalid server-action response displays a safe message.
+- [x] Confirm empty cart after remove/clear.
 
 ### B5. E2E and regression checks for PR B
 
-- [ ] Run `node scripts/run-e2e.mjs --project=chromium e2e/store-cart-foundation.spec.ts --workers=1`.
-- [ ] Run `pnpm validate:store-cart-foundation`.
-- [ ] Run `pnpm test:store-cart-foundation`.
-- [ ] Run `pnpm test:store-foundation`.
-- [ ] Run `pnpm test:store-admin-products`.
-- [ ] Run `pnpm lint`.
-- [ ] Run `pnpm test` and `pnpm build` if feasible; record any deferred command with rationale.
+- [x] Run `node scripts/run-e2e.mjs --project=chromium e2e/store-cart-foundation.spec.ts --workers=1`.
+- [x] Run `pnpm validate:store-cart-foundation`.
+- [x] Run `pnpm test:store-cart-foundation`.
+- [x] Run `pnpm test:store-foundation`.
+- [x] Run `pnpm test:store-admin-products`.
+- [x] Run `pnpm lint`.
+- [x] Run `pnpm test` and `pnpm build` if feasible; record any deferred command with rationale.
 
 ### B6. PR B completion
 
-- [ ] Update apply progress with RED/GREEN/TRIANGULATE/REFACTOR evidence.
+- [x] Update apply progress with RED/GREEN/TRIANGULATE/REFACTOR evidence.
+- [x] Complete post-verify warning fix pass: quiet optional auth probes for guest cart flows and rerun required checks under Node 22.
 - [ ] Run fresh reviewer before commit/PR.
 - [ ] Commit PR B as a reviewable work unit.
 

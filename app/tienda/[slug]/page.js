@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicProductBySlug } from "@/lib/server/store/catalog";
+import { AddToCartForm } from "./add-to-cart-form";
 
 function ProductImage({ product }) {
 	if (product.hasImage) {
@@ -64,6 +65,20 @@ export default async function TiendaDetallePage({ params }) {
 								{product.stockQuantity > 0 ? "Disponible" : "Sin stock"}
 							</Badge>
 						</div>
+
+						{product.stockQuantity > 0 ? (
+							<AddToCartForm product={product} />
+						) : (
+							<div className="rounded-lg border border-dashed bg-muted/40 p-4 text-sm text-muted-foreground">
+								<p className="font-medium text-foreground">
+									Producto sin stock para carrito
+								</p>
+								<p>
+									Este producto sigue visible en la tienda, pero no se puede
+									agregar al carrito hasta reponer stock.
+								</p>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 			</div>
