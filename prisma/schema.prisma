@@ -45,6 +45,7 @@ model Usuario {
   cuentas                         Account[]
   emailVerificationResendAttempts EmailVerificationResendAttempt[]
   blogPosts                       BlogPost[]
+  carts                           Cart[]
 
   @@map("usuarios")
 }
@@ -155,10 +156,41 @@ model Product {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  category  Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  cartItems CartItem[]
 
   @@index([status, featured])
   @@index([status, createdAt])
   @@index([categoryId, status])
   @@map("store_products")
+}
+
+model Cart {
+  id             String     @id @default(cuid())
+  userId         String?
+  anonymousToken String?    @unique
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user  Usuario?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@index([userId])
+  @@map("store_carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@index([productId])
+  @@map("store_cart_items")
 }
