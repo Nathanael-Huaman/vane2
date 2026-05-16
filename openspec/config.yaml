@@ -1,0 +1,10 @@
+project: vane2
+name: Vane2 frontend
+artifact_store: openspec
+strict_tdd: true
+test_command: pnpm test
+review_budget_changed_lines: 400
+notes:
+  - Next.js 16 docs under node_modules/next/dist/docs must be consulted before route/component changes.
+  - Currency for store work is Peruvian soles (S/.) with integer minor units in persistence/business logic.
+  - Use SDD/OpenSpec for non-trivial store slices.
