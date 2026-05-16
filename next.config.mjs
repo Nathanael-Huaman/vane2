@@ -1,6 +1,8 @@
+const e2eDistDirSuffix = process.env.E2E_DIST_DIR_SUFFIX;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+	...(e2eDistDirSuffix ? { distDir: `.next-e2e/${e2eDistDirSuffix}` } : {}),
 };
 
 export default nextConfig;
