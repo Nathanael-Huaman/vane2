@@ -77,18 +77,18 @@ Scope:
 
 Tasks:
 
-- [ ] RED: Re-check local Next.js 16 docs for dynamic page `params` promises and `notFound()` before adding confirmation route.
-- [ ] RED: Add tests for valid confirmation token lookup/render data, invalid/missing/unrelated token denial, cart token denial, and historical rendering from snapshots after product changes; capture failing output.
-- [ ] GREEN: Implement `app/pedido/confirmacion/[token]/page.js` that awaits `params`, calls `getOrderByConfirmationToken(token)`, calls `notFound()` for invalid access, and renders only order snapshot fields/totals.
-- [ ] GREEN: Ensure the confirmation page does not read or authorize with `store_cart_token` and does not expose raw `confirmationTokenHash`.
-- [ ] TRIANGULATE: Add/keep evidence that `customerName`, `customerEmail`, status, item names/slugs/unit prices/quantities/line totals, subtotal, and total render from the order snapshot after catalog mutation.
-- [ ] REFACTOR: Keep markup minimal; avoid admin order views, email, fulfillment, payment, shipping, tax, or broad storefront redesign.
-- [ ] VERIFY PR C: Run targeted checkout/order tests, `pnpm test:store-admin-products` if product relation/delete behavior was touched, `pnpm test:store-cart-foundation`, and `pnpm test` or document exact blockers.
-- [ ] PAUSE GATE: If PR C exceeds 250 changed lines, stop and ask whether to split confirmation route from e2e/regression evidence.
+- [x] RED: Re-check local Next.js 16 docs for dynamic page `params` promises and `notFound()` before adding confirmation route.
+- [x] RED: Add tests for valid confirmation token lookup/render data, invalid/missing/unrelated token denial, cart token denial, and historical rendering from snapshots after product changes; capture failing output.
+- [x] GREEN: Implement `app/pedido/confirmacion/[token]/page.js` that awaits `params`, calls `getOrderByConfirmationToken(token)`, calls `notFound()` for invalid access, and renders only order snapshot fields/totals.
+- [x] GREEN: Ensure the confirmation page does not read or authorize with `store_cart_token` and does not expose raw `confirmationTokenHash`.
+- [x] TRIANGULATE: Add/keep evidence that `customerName`, `customerEmail`, status, item names/slugs/unit prices/quantities/line totals, subtotal, and total render from the order snapshot after catalog mutation.
+- [x] REFACTOR: Keep markup minimal; avoid admin order views, email, fulfillment, payment, shipping, tax, or broad storefront redesign.
+- [x] VERIFY PR C: Run targeted checkout/order tests, `pnpm test:store-admin-products` if product relation/delete behavior was touched, `pnpm test:store-cart-foundation`, and `pnpm test` or document exact blockers.
+- [x] PAUSE GATE: If PR C exceeds 250 changed lines, stop and ask whether to split confirmation route from e2e/regression evidence.
 
 ## Verification Checklist and Commands
 
-- [ ] Confirm strict TDD evidence is recorded for each PR: RED failure before production changes, GREEN pass after implementation, TRIANGULATE edge/regression evidence, and REFACTOR notes.
+- [x] Confirm strict TDD evidence is recorded for each PR: RED failure before production changes, GREEN pass after implementation, TRIANGULATE edge/regression evidence, and REFACTOR notes.
 - [x] Run `pnpm validate:store-checkout-order-foundation`.
 - [x] Run `pnpm test:store-checkout-order-foundation`.
 - [x] Run `pnpm test:store-cart-foundation` for cart regression coverage.
@@ -101,12 +101,12 @@ Tasks:
 
 ## Non-goal Guardrails
 
-- [ ] Do not implement payment providers, payment intents, cash/card flows, or payment state modeling.
-- [ ] Do not implement shipping, taxes, invoices, fulfillment, notifications, or email.
-- [ ] Do not add admin order management.
-- [ ] Do not add stock reservations, holds, expiry jobs, abandoned-cart recovery, or cart merge-on-login.
-- [ ] Do not add discounts, coupons, bundles, variants, or multi-currency support.
-- [ ] Do not require phone, address, tax identity, payment details, or account registration.
-- [ ] Do not add navbar cart/order counts or broad storefront redesign.
-- [ ] Do not change catalog-card checkout/add-to-cart behavior.
-- [ ] Do not reuse or accept the cart anonymous token as an order access credential.
+- [x] Do not implement payment providers, payment intents, cash/card flows, or payment state modeling.
+- [x] Do not implement shipping, taxes, invoices, fulfillment, notifications, or email.
+- [x] Do not add admin order management.
+- [x] Do not add stock reservations, holds, expiry jobs, abandoned-cart recovery, or cart merge-on-login.
+- [x] Do not add discounts, coupons, bundles, variants, or multi-currency support.
+- [x] Do not require phone, address, tax identity, payment details, or account registration.
+- [x] Do not add navbar cart/order counts or broad storefront redesign.
+- [x] Do not change catalog-card checkout/add-to-cart behavior.
+- [x] Do not reuse or accept the cart anonymous token as an order access credential.
