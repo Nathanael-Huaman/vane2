@@ -5,6 +5,7 @@ import {
 	__setCheckoutActionTestDependencies,
 } from "../lib/actions/store-checkout-dependencies.js";
 import { checkoutAction } from "../lib/actions/store-checkout.js";
+import { buildOrderConfirmationViewModel } from "../app/pedido/confirmacion/[token]/confirmation-view-model.js";
 import { addCartItem } from "../lib/server/store/cart.js";
 import {
 	createOrderFromCart,
@@ -148,6 +149,19 @@ async function main() {
 		assert.equal(lookup?.items[0]?.productName, vase.name);
 		assert.equal(lookup?.items[0]?.productSlug, vase.slug);
 		assert.equal(lookup?.items[0]?.unitPriceMinorUnits, vase.priceMinorUnits);
+		const confirmationView = buildOrderConfirmationViewModel(lookup);
+		assert.equal(confirmationView.heading, "Pedido confirmado");
+		assert.equal(confirmationView.customerName, "Cliente Checkout");
+		assert.equal(confirmationView.customerEmail, "cliente@example.com");
+		assert.equal(confirmationView.status, "pending");
+		assert.equal(confirmationView.items[0]?.productName, vase.name);
+		assert.equal(confirmationView.items[0]?.productSlug, vase.slug);
+		assert.equal(confirmationView.items[0]?.quantity, 2);
+		assert.equal(confirmationView.items[0]?.unitPriceLabel, "S/. 120.00");
+		assert.equal(confirmationView.items[0]?.lineTotalLabel, "S/. 240.00");
+		assert.equal(confirmationView.subtotalLabel, "S/. 240.00");
+		assert.equal(confirmationView.totalLabel, "S/. 240.00");
+		assert.equal(Object.hasOwn(confirmationView, "confirmationTokenHash"), false);
 		assert.equal(await getOrderByConfirmationToken("checkout-success-cart"), null);
 		assert.equal(await getOrderByConfirmationToken("not-a-token"), null);
 		await restoreSeededProductState(prisma);

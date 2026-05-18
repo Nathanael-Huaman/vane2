@@ -10,6 +10,8 @@ const migration = readIfExists("prisma/migrations/20260518020000_add_store_order
 const checkoutAction = readIfExists("lib/actions/store-checkout.js");
 const checkoutPage = readIfExists("app/checkout/page.js");
 const checkoutForm = readIfExists("app/checkout/checkout-form.js") || checkoutPage;
+const confirmationPage = readIfExists("app/pedido/confirmacion/[token]/page.js");
+const confirmationViewModel = readIfExists("app/pedido/confirmacion/[token]/confirmation-view-model.js");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const checks = [];
 
@@ -60,6 +62,14 @@ check("checkout page reads current cart with existing context", () => /cookies\s
 check("checkout page renders empty cart guidance and subtotal", () => /Tu carrito está vacío|Tu carrito esta vacío|carrito está vacío/.test(checkoutPage) && /subtotalLabel/.test(checkoutPage));
 check("checkout form requires only customer name and email", () => /name="customerName"/.test(checkoutForm) && /name="customerEmail"/.test(checkoutForm) && /required/.test(checkoutForm));
 check("checkout form omits phone, shipping, tax, and payment fields", () => !/name="(phone|telefono|teléfono|shipping|address|direccion|dirección|tax|ruc|dni|payment|card|tarjeta)"/i.test(checkoutForm));
+
+console.log("\nStore order confirmation page");
+check("confirmation page route exists", () => fs.existsSync("app/pedido/confirmacion/[token]/page.js"));
+check("confirmation page awaits dynamic params token", () => /await\s+params/.test(confirmationPage) && /\btoken\b/.test(confirmationPage));
+check("confirmation page uses private token lookup and notFound", () => /getOrderByConfirmationToken/.test(confirmationPage) && /notFound\s*\(/.test(confirmationPage));
+check("confirmation page does not read or authorize with cart token", () => !/cookies\s*\(/.test(confirmationPage) && !/store_cart_token/.test(confirmationPage));
+check("confirmation page does not expose confirmation token hash", () => !/confirmationTokenHash/.test(confirmationPage));
+check("confirmation page renders order contact, status, items, and totals", () => ["customerName", "customerEmail", "status", "productName", "productSlug", "unitPriceMinorUnits", "quantity", "lineTotalMinorUnits", "subtotalMinorUnits", "totalMinorUnits"].every((field) => new RegExp(`\\b${field}\\b`).test(`${confirmationPage}\n${confirmationViewModel}`)));
 
 const failed = checks.filter((check) => !check.ok);
 console.log(`\nResults: ${checks.length - failed.length} passed, ${failed.length} failed`);
