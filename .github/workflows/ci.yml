@@ -21,6 +21,12 @@ jobs:
   checks:
     name: Checks
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:./dev.db
+      AUTH_SECRET: ci-auth-secret-at-least-32-characters
+      AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
 
     steps:
       - name: Checkout
@@ -39,6 +45,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Prepare database
+        run: pnpm prisma migrate deploy
 
       - name: Lint
         run: pnpm lint
