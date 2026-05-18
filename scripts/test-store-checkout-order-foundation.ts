@@ -1,5 +1,10 @@
 import "dotenv/config";
 import assert from "node:assert/strict";
+import {
+	__resetCheckoutActionTestDependencies,
+	__setCheckoutActionTestDependencies,
+} from "../lib/actions/store-checkout-dependencies.js";
+import { checkoutAction } from "../lib/actions/store-checkout.js";
 import { addCartItem } from "../lib/server/store/cart.js";
 import {
 	createOrderFromCart,
@@ -51,6 +56,24 @@ async function restoreSeededProductState(
 			priceMinorUnits: 6900,
 			stockQuantity: 12,
 			status: "active",
+		},
+	});
+}
+
+function formData(input: Record<string, string>) {
+	const data = new FormData();
+	for (const [key, value] of Object.entries(input)) data.set(key, value);
+	return data;
+}
+
+async function installCheckoutActionTestDeps(token: string, redirects: string[], revalidated: string[]) {
+	await __setCheckoutActionTestDependencies({
+		cookies: async () => ({ get: (name: string) => (name === "store_cart_token" ? { value: token } : undefined) }),
+		getOptionalAuthenticatedSession: async () => null,
+		revalidatePath: (path: string) => revalidated.push(path),
+		redirect: (path: string) => {
+			redirects.push(path);
+			throw Object.assign(new Error("NEXT_REDIRECT"), { path });
 		},
 	});
 }
@@ -228,7 +251,64 @@ async function main() {
 			() => addCartItem({ anonymousToken: "draft-cart" }, { productId: draft.id, quantity: 1 }),
 			/no esta disponible/i,
 		);
+
+		await addCartItem({ anonymousToken: "action-invalid-contact-cart" }, { productId: cushion.id, quantity: 1 });
+		let redirects: string[] = [];
+		let revalidated: string[] = [];
+		await installCheckoutActionTestDeps("action-invalid-contact-cart", redirects, revalidated);
+		const invalidContact = await checkoutAction(
+			{ ok: false, data: null, error: null },
+			formData({ customerName: "", customerEmail: "bad-email" }),
+		);
+		assert.equal(invalidContact.ok, false);
+		assert.equal(invalidContact.error.status, 400);
+		assert.match(invalidContact.error.message, /nombre/i);
+		assert.equal(
+			await prisma.cartItem.count({ where: { cart: { anonymousToken: "action-invalid-contact-cart" } } }),
+			1,
+		);
+
+		await addCartItem({ anonymousToken: "action-stale-cart" }, { productId: cushion.id, quantity: 2 });
+		await prisma.product.update({ where: { id: cushion.id }, data: { stockQuantity: 1 } });
+		redirects = [];
+		revalidated = [];
+		await installCheckoutActionTestDeps("action-stale-cart", redirects, revalidated);
+		const stale = await checkoutAction(
+			{ ok: false, data: null, error: null },
+			formData({ customerName: "Cliente", customerEmail: "cliente@example.com" }),
+		);
+		assert.equal(stale.ok, false);
+		assert.equal(stale.error.status, 400);
+		assert.match(stale.error.message, /stock disponible/i);
+		assert.equal(
+			await prisma.cartItem.count({ where: { cart: { anonymousToken: "action-stale-cart" } } }),
+			1,
+		);
+		await prisma.product.update({ where: { id: cushion.id }, data: { stockQuantity: cushion.stockQuantity } });
+
+		await addCartItem({ anonymousToken: "action-success-cart" }, { productId: cushion.id, quantity: 1 });
+		redirects = [];
+		revalidated = [];
+		await installCheckoutActionTestDeps("action-success-cart", redirects, revalidated);
+		await assert.rejects(
+			() =>
+				checkoutAction(
+					{ ok: false, data: null, error: null },
+					formData({ customerName: "Cliente Action", customerEmail: "ACTION@EXAMPLE.COM" }),
+				),
+			(error: Error & { path?: string }) => {
+				assert.match(error.path ?? "", /^\/pedido\/confirmacion\/[a-f0-9]{64}$/);
+				return true;
+			},
+		);
+		assert.deepEqual(revalidated, ["/carrito", "/checkout"]);
+		assert.equal(redirects.length, 1);
+		assert.equal(
+			await prisma.cartItem.count({ where: { cart: { anonymousToken: "action-success-cart" } } }),
+			0,
+		);
 	} finally {
+		await __resetCheckoutActionTestDependencies();
 		await resetCheckoutData(prisma).catch(() => undefined);
 		await restoreSeededProductState(prisma).catch(() => undefined);
 		await prisma.$disconnect();

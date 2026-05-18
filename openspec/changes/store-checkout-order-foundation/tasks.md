@@ -56,17 +56,17 @@ Scope:
 
 Tasks:
 
-- [ ] RED: Re-check local Next.js 16 docs under `node_modules/next/dist/docs/` for Server Actions, `cookies()`, `redirect()`, `revalidatePath()`, and page `params/searchParams` before route/action/cookie/redirect changes.
-- [ ] RED: Extend validation/runtime tests for `checkoutAction` invalid contact/stale cart responses, success redirect path, and preservation of cart items on action failure; capture failing output before production changes.
-- [ ] RED: Add validator checks that `/checkout` exists, renders only `customerName` and `customerEmail` as required contact fields, reads cart context using existing cart cookie/session conventions, and does not request phone/shipping/payment fields.
-- [ ] GREEN: Implement `lib/actions/store-checkout.js` with top-level `"use server"`, existing `store_cart_token` context resolution pattern, domain-error responses, `revalidatePath("/carrito")`, `revalidatePath("/checkout")`, and success `redirect()` outside caught `try/catch`.
-- [ ] GREEN: Implement `app/checkout/page.js` as a minimal Server Component showing empty-cart guidance or the current cart subtotal and checkout form.
-- [ ] GREEN: Add a client form component only if needed for `useActionState` inline errors; otherwise use a simple Server Action form.
+- [x] RED: Re-check local Next.js 16 docs under `node_modules/next/dist/docs/` for Server Actions, `cookies()`, `redirect()`, `revalidatePath()`, and page `params/searchParams` before route/action/cookie/redirect changes.
+- [x] RED: Extend validation/runtime tests for `checkoutAction` invalid contact/stale cart responses, success redirect path, and preservation of cart items on action failure; capture failing output before production changes.
+- [x] RED: Add validator checks that `/checkout` exists, renders only `customerName` and `customerEmail` as required contact fields, reads cart context using existing cart cookie/session conventions, and does not request phone/shipping/payment fields.
+- [x] GREEN: Implement `lib/actions/store-checkout.js` with top-level `"use server"`, existing `store_cart_token` context resolution pattern, domain-error responses, `revalidatePath("/carrito")`, `revalidatePath("/checkout")`, and success `redirect()` outside caught `try/catch`.
+- [x] GREEN: Implement `app/checkout/page.js` as a minimal Server Component showing empty-cart guidance or the current cart subtotal and checkout form.
+- [x] GREEN: Add a client form component only if needed for `useActionState` inline errors; otherwise use a simple Server Action form.
 - [ ] GREEN: Optionally add a small `/checkout` CTA in `app/carrito/page.js` only if it fits the 250-line slice and does not alter cart mutation forms.
-- [ ] TRIANGULATE: Verify failed checkout due to invalid contact, stale stock, unavailable product, or unexpected service error keeps cart contents visible in `/carrito` or `/checkout`.
-- [ ] REFACTOR: Keep action response helpers consistent with `lib/actions/store-cart.js`; do not extract shared action infrastructure unless line-neutral and covered by tests.
-- [ ] VERIFY PR B: Run targeted checkout validation/runtime scripts, `pnpm test:store-cart-foundation`, and `pnpm test` or document exact blockers.
-- [ ] PAUSE GATE: If PR B exceeds 250 changed lines, stop and ask whether to defer the `/carrito` CTA or split checkout page and action into separate PRs.
+- [x] TRIANGULATE: Verify failed checkout due to invalid contact, stale stock, unavailable product, or unexpected service error keeps cart contents visible in `/carrito` or `/checkout`.
+- [x] REFACTOR: Keep action response helpers consistent with `lib/actions/store-cart.js`; do not extract shared action infrastructure unless line-neutral and covered by tests.
+- [x] VERIFY PR B: Run targeted checkout validation/runtime scripts, `pnpm test:store-cart-foundation`, and `pnpm test` or document exact blockers.
+- [x] PAUSE GATE: If PR B exceeds 250 changed lines, stop and ask whether to defer the `/carrito` CTA or split checkout page and action into separate PRs.
 
 ### PR C — Private-token confirmation UX and regression evidence
 
@@ -89,12 +89,12 @@ Tasks:
 ## Verification Checklist and Commands
 
 - [ ] Confirm strict TDD evidence is recorded for each PR: RED failure before production changes, GREEN pass after implementation, TRIANGULATE edge/regression evidence, and REFACTOR notes.
-- [ ] Run `pnpm validate:store-checkout-order-foundation`.
+- [x] Run `pnpm validate:store-checkout-order-foundation`.
 - [x] Run `pnpm test:store-checkout-order-foundation`.
 - [x] Run `pnpm test:store-cart-foundation` for cart regression coverage.
 - [ ] Run `pnpm test:store-admin-products` if schema/product/admin behavior is touched beyond relations.
-- [ ] Run `pnpm test` as required full verification.
-- [ ] If Next.js route/action/cookie/redirect code changes, record which `node_modules/next/dist/docs/` files were re-read during apply.
+- [x] Run `pnpm test` as required full verification.
+- [x] If Next.js route/action/cookie/redirect code changes, record which `node_modules/next/dist/docs/` files were re-read during apply.
 - [x] Verify all persisted monetary values remain integer minor units for Peruvian soles (S/.), with no floating point currency storage.
 - [x] Verify the cart is cleared only after successful order commit and preserved on all validation/stale/persistence failures.
 - [x] Verify the order confirmation credential is a dedicated private token and the anonymous cart token never grants order access.

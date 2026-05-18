@@ -7,6 +7,9 @@ function readIfExists(path) {
 
 const schema = readIfExists("prisma/schema.prisma");
 const migration = readIfExists("prisma/migrations/20260518020000_add_store_orders/migration.sql");
+const checkoutAction = readIfExists("lib/actions/store-checkout.js");
+const checkoutPage = readIfExists("app/checkout/page.js");
+const checkoutForm = readIfExists("app/checkout/checkout-form.js") || checkoutPage;
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const checks = [];
 
@@ -46,6 +49,17 @@ check("OrderItem stores immutable product snapshots", () => ["productName", "pro
 check("OrderItem cascades from order and restricts product delete", () => /order\s+Order\s+@relation\(fields:\s*\[orderId\],\s*references:\s*\[id\],\s*onDelete:\s*Cascade\)/.test(item) && /product\s+Product\s+@relation\(fields:\s*\[productId\],\s*references:\s*\[id\],\s*onDelete:\s*Restrict\)/.test(item));
 check("migration creates order tables", () => /CREATE TABLE "store_orders"/.test(migration) && /CREATE TABLE "store_order_items"/.test(migration));
 check("migration creates token and relation indexes", () => /store_orders_confirmationTokenHash_key/.test(migration) && /store_orders_userId_createdAt_idx/.test(migration) && /store_order_items_productId_idx/.test(migration));
+
+console.log("\nStore checkout action and page");
+check("checkout action module uses Server Action conventions", () => /^"use server";/.test(checkoutAction) && /export\s+async\s+function\s+checkoutAction\s*\(/.test(checkoutAction));
+check("checkout action module does not export test-only dependency hooks", () => !/export\s+(async\s+)?function\s+__\w*CheckoutActionTestDependencies/.test(checkoutAction));
+check("checkout action resolves existing cart cookie and session context", () => /store_cart_token/.test(checkoutAction) && /cookies\s*\(/.test(checkoutAction) && /getOptionalAuthenticatedSession/.test(checkoutAction));
+check("checkout action creates orders and handles domain failures", () => /createOrderFromCart/.test(checkoutAction) && /isOrderDomainError/.test(checkoutAction) && /errorResponse\([^\n]*400/.test(checkoutAction));
+check("checkout action revalidates cart and checkout before redirect", () => /revalidatePath\("\/carrito"\)/.test(checkoutAction) && /revalidatePath\("\/checkout"\)/.test(checkoutAction) && /redirect\(redirectTo\)/.test(checkoutAction));
+check("checkout page reads current cart with existing context", () => /cookies\s*\(/.test(checkoutPage) && /getOptionalAuthenticatedSession/.test(checkoutPage) && /getCurrentCartSummary/.test(checkoutPage));
+check("checkout page renders empty cart guidance and subtotal", () => /Tu carrito está vacío|Tu carrito esta vacío|carrito está vacío/.test(checkoutPage) && /subtotalLabel/.test(checkoutPage));
+check("checkout form requires only customer name and email", () => /name="customerName"/.test(checkoutForm) && /name="customerEmail"/.test(checkoutForm) && /required/.test(checkoutForm));
+check("checkout form omits phone, shipping, tax, and payment fields", () => !/name="(phone|telefono|teléfono|shipping|address|direccion|dirección|tax|ruc|dni|payment|card|tarjeta)"/i.test(checkoutForm));
 
 const failed = checks.filter((check) => !check.ok);
 console.log(`\nResults: ${checks.length - failed.length} passed, ${failed.length} failed`);
