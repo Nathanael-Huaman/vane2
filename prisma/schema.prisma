@@ -23,6 +23,12 @@ enum ProductStatus {
   draft
   archived
 }
+
+enum OrderStatus {
+  pending
+  confirmed
+}
+
 datasource db {
   provider = "sqlite"
 }
@@ -46,6 +52,7 @@ model Usuario {
   emailVerificationResendAttempts EmailVerificationResendAttempt[]
   blogPosts                       BlogPost[]
   carts                           Cart[]
+  orders                          Order[]
 
   @@map("usuarios")
 }
@@ -156,13 +163,53 @@ model Product {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  category  Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  cartItems CartItem[]
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   @@index([status, featured])
   @@index([status, createdAt])
   @@index([categoryId, status])
   @@map("store_products")
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  userId                String?
+  customerName          String
+  customerEmail         String
+  status                OrderStatus @default(pending)
+  subtotalMinorUnits    Int
+  totalMinorUnits       Int
+  confirmationTokenHash String      @unique
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  user  Usuario?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("store_orders")
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  orderId             String
+  productId           String
+  productName         String
+  productSlug         String
+  unitPriceMinorUnits Int
+  quantity            Int
+  lineTotalMinorUnits Int
+  createdAt           DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("store_order_items")
 }
 
 model Cart {
