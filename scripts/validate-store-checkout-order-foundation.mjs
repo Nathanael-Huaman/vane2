@@ -9,6 +9,7 @@ const schema = readIfExists("prisma/schema.prisma");
 const migration = readIfExists("prisma/migrations/20260518020000_add_store_orders/migration.sql");
 const checkoutAction = readIfExists("lib/actions/store-checkout.js");
 const checkoutPage = readIfExists("app/checkout/page.js");
+const cartPage = readIfExists("app/carrito/page.js");
 const checkoutForm = readIfExists("app/checkout/checkout-form.js") || checkoutPage;
 const confirmationPage = readIfExists("app/pedido/confirmacion/[token]/page.js");
 const confirmationViewModel = readIfExists("app/pedido/confirmacion/[token]/confirmation-view-model.js");
@@ -62,6 +63,11 @@ check("checkout page reads current cart with existing context", () => /cookies\s
 check("checkout page renders empty cart guidance and subtotal", () => /Tu carrito está vacío|Tu carrito esta vacío|carrito está vacío/.test(checkoutPage) && /subtotalLabel/.test(checkoutPage));
 check("checkout form requires only customer name and email", () => /name="customerName"/.test(checkoutForm) && /name="customerEmail"/.test(checkoutForm) && /required/.test(checkoutForm));
 check("checkout form omits phone, shipping, tax, and payment fields", () => !/name="(phone|telefono|teléfono|shipping|address|direccion|dirección|tax|ruc|dni|payment|card|tarjeta)"/i.test(checkoutForm));
+check("cart summary provides checkout CTA", () => /href="\/checkout"/.test(cartPage) && /Finalizar compra/.test(cartPage));
+check("empty cart state does not offer checkout CTA", () => {
+  const emptyCartState = cartPage.match(/function\s+EmptyCartState\s*\(\)\s*{[\s\S]*?^}/m)?.[0] ?? "";
+  return /Tu carrito está vacío/.test(emptyCartState) && !/href="\/checkout"/.test(emptyCartState);
+});
 
 console.log("\nStore order confirmation page");
 check("confirmation page route exists", () => fs.existsSync("app/pedido/confirmacion/[token]/page.js"));

@@ -131,6 +131,9 @@ export default async function CarritoPage() {
 										{cart.subtotalLabel}
 									</span>
 								</div>
+								<Button asChild className="w-full">
+									<Link href="/checkout">Finalizar compra</Link>
+								</Button>
 								<ClearCartForm />
 								<Link
 									href="/tienda"
