@@ -36,16 +36,16 @@ Scope:
 Tasks:
 
 - [ ] RED: Add `scripts/validate-store-checkout-order-foundation.mjs` checks for `OrderStatus`, `Order`, `OrderItem`, mapped table names, snapshot fields, private token hash field, and package scripts; run it and capture failing output.
-- [ ] RED: Add `scripts/test-store-checkout-order-foundation.ts` cases for order snapshots/totals, stock decrement, empty cart rejection, invalid contact rejection, stale stock rejection, non-active product rejection, cart clear on success, and cart preservation on failure; run targeted test and capture failing output.
+- [x] RED: Add `scripts/test-store-checkout-order-foundation.ts` cases for order snapshots/totals, stock decrement, empty cart rejection, invalid contact rejection, stale stock rejection, non-active product rejection, cart clear on success, and cart preservation on failure; run targeted test and capture failing output.
 - [ ] GREEN: Update `prisma/schema.prisma` with `OrderStatus`, `Order`, `OrderItem`, `Usuario.orders`, and `Product.orderItems` exactly scoped to the design.
 - [ ] GREEN: Add required Prisma migration/generation step for local schema workflow and keep generated artifacts out of the PR unless project workflow already tracks them.
-- [ ] GREEN: Implement `lib/server/store/orders.js` with contact parsing, `createOrderFromCart(context, input)`, transactional authoritative price/stock revalidation, conditional stock decrement, immutable snapshots, cart item clearing after order creation, private token generation, and hashed token storage.
-- [ ] GREEN: Add `getOrderByConfirmationToken(token)` lookup that rejects missing/malformed tokens and never accepts cart tokens.
-- [ ] GREEN: Add package scripts `validate:store-checkout-order-foundation` and `test:store-checkout-order-foundation` if the slice remains under budget.
-- [ ] TRIANGULATE: Add or adjust tests proving checkout-time product price is used, product rename/reprice/archive does not alter saved snapshots, and earlier stock decrements roll back when a later cart item fails.
-- [ ] REFACTOR: Remove duplication with `lib/server/store/cart-validation.js` only when it reduces line count and preserves existing cart behavior; avoid broad cart refactors.
-- [ ] VERIFY PR A: Run `pnpm validate:store-checkout-order-foundation`, `pnpm test:store-checkout-order-foundation`, and `pnpm test` or document exact blockers.
-- [ ] PAUSE GATE: If PR A exceeds 250 changed lines, stop and ask whether to split into PR A1 schema/validators and PR A2 service/runtime tests.
+- [x] GREEN: Implement `lib/server/store/orders.js` with contact parsing, `createOrderFromCart(context, input)`, transactional authoritative price/stock revalidation, conditional stock decrement, immutable snapshots, cart item clearing after order creation, private token generation, and hashed token storage.
+- [x] GREEN: Add `getOrderByConfirmationToken(token)` lookup that rejects missing/malformed tokens and never accepts cart tokens.
+- [x] GREEN: Add package scripts `validate:store-checkout-order-foundation` and `test:store-checkout-order-foundation` if the slice remains under budget.
+- [x] TRIANGULATE: Add or adjust tests proving checkout-time product price is used, product rename/reprice/archive does not alter saved snapshots, and earlier stock decrements roll back when a later cart item fails.
+- [x] REFACTOR: Remove duplication with `lib/server/store/cart-validation.js` only when it reduces line count and preserves existing cart behavior; avoid broad cart refactors.
+- [x] VERIFY PR A: Run `pnpm validate:store-checkout-order-foundation`, `pnpm test:store-checkout-order-foundation`, and `pnpm test` or document exact blockers.
+- [x] PAUSE GATE: If PR A exceeds 250 changed lines, stop and ask whether to split into PR A1 schema/validators and PR A2 service/runtime tests.
 
 ### PR B — Checkout action/page and cart lifecycle UI
 
@@ -90,14 +90,14 @@ Tasks:
 
 - [ ] Confirm strict TDD evidence is recorded for each PR: RED failure before production changes, GREEN pass after implementation, TRIANGULATE edge/regression evidence, and REFACTOR notes.
 - [ ] Run `pnpm validate:store-checkout-order-foundation`.
-- [ ] Run `pnpm test:store-checkout-order-foundation`.
-- [ ] Run `pnpm test:store-cart-foundation` for cart regression coverage.
+- [x] Run `pnpm test:store-checkout-order-foundation`.
+- [x] Run `pnpm test:store-cart-foundation` for cart regression coverage.
 - [ ] Run `pnpm test:store-admin-products` if schema/product/admin behavior is touched beyond relations.
 - [ ] Run `pnpm test` as required full verification.
 - [ ] If Next.js route/action/cookie/redirect code changes, record which `node_modules/next/dist/docs/` files were re-read during apply.
-- [ ] Verify all persisted monetary values remain integer minor units for Peruvian soles (S/.), with no floating point currency storage.
-- [ ] Verify the cart is cleared only after successful order commit and preserved on all validation/stale/persistence failures.
-- [ ] Verify the order confirmation credential is a dedicated private token and the anonymous cart token never grants order access.
+- [x] Verify all persisted monetary values remain integer minor units for Peruvian soles (S/.), with no floating point currency storage.
+- [x] Verify the cart is cleared only after successful order commit and preserved on all validation/stale/persistence failures.
+- [x] Verify the order confirmation credential is a dedicated private token and the anonymous cart token never grants order access.
 
 ## Non-goal Guardrails
 

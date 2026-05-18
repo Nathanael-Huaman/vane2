@@ -8,3 +8,4 @@ notes:
   - Next.js 16 docs under node_modules/next/dist/docs must be consulted before route/component changes.
   - Currency for store work is Peruvian soles (S/.) with integer minor units in persistence/business logic.
   - Use SDD/OpenSpec for non-trivial store slices.
+  - For RED tests against new TypeScript/JavaScript modules, create minimal stubs first; tests should fail by behavior, not missing imports, to avoid pi-lens/LSP OOM crashes.
