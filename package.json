@@ -21,6 +21,7 @@
     "validate:store-admin-products": "node scripts/validate-store-admin-products.mjs",
     "test:store-admin-products": "pnpm seed:store && tsx scripts/test-store-admin-products.ts",
     "test:store-admin-products:e2e": "node scripts/run-e2e.mjs --project=chromium e2e/store-admin-products-admin-routes.spec.ts --workers=1",
+    "test:store-admin-orders:e2e": "node scripts/run-e2e.mjs --project=chromium e2e/store-admin-orders.spec.ts --workers=1",
     "validate:store-cart-foundation": "node scripts/validate-store-cart-foundation.mjs",
     "test:store-cart-foundation": "pnpm seed:store && tsx scripts/test-store-cart-foundation.ts",
     "validate:store-checkout-order-foundation": "node scripts/validate-store-checkout-order-foundation.mjs",
