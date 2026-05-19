@@ -1,11 +1,77 @@
+schema: spec-driven
 project: vane2
 name: Vane2 frontend
-artifact_store: openspec
+artifact_store: hybrid
 strict_tdd: true
 test_command: pnpm test
 review_budget_changed_lines: 400
+
+context: |
+  Stack: Next.js 16.2.6 App Router, React 19.2.6, Prisma 7.8, NextAuth 5 beta, Tailwind CSS 4, shadcn/Radix UI.
+  Runtime/tooling: Node >=20.19 <23, pnpm >=10 <12, ESM package, Prisma generated client under lib/generated/prisma.
+  Architecture: app/ route segments with server actions in lib/actions, server domain modules in lib/server, UI primitives in components/ui.
+  Testing: script-based validation/runtime tests via node/tsx plus Playwright E2E; CI runs pnpm lint, pnpm test, pnpm build.
+  Style: ESLint 9 with next/core-web-vitals; no dedicated formatter script detected.
+  Rule: read relevant Next.js docs under node_modules/next/dist/docs before writing Next.js code; this install currently has no docs files detected.
+
+testing:
+  strict_tdd: true
+  detected: 2026-05-19
+  test_runner:
+    framework: script-based node/tsx checks plus Playwright
+    command: pnpm test
+  layers:
+    unit:
+      available: true
+      tool: tsx/node script tests
+    integration:
+      available: true
+      tool: seeded Prisma/runtime scripts
+    e2e:
+      available: true
+      tool: Playwright
+  coverage:
+    available: false
+    command: ""
+  quality:
+    linter:
+      available: true
+      command: pnpm lint
+    type_checker:
+      available: false
+      command: ""
+    formatter:
+      available: false
+      command: ""
+    build:
+      available: true
+      command: pnpm build
+
+rules:
+  proposal:
+    - Include scope, rollback plan, test plan, and review-budget risk for non-trivial changes.
+  specs:
+    - Use Given/When/Then scenarios and RFC 2119 keywords for behavioral requirements.
+  design:
+    - Document server/client boundaries, Prisma data access, and Next.js API/version assumptions.
+    - For Next.js route/component changes, read the relevant guide in node_modules/next/dist/docs before coding and heed deprecations.
+  tasks:
+    - Group work into reviewable units and flag any slice likely to exceed 400 changed lines.
+  apply:
+    tdd: true
+    test_command: pnpm test
+    instructions:
+      - Follow existing app/, lib/actions, lib/server, and components/ patterns.
+      - For RED tests against new TypeScript/JavaScript modules, create minimal stubs first so failures are behavioral, not module-resolution errors.
+      - Add TypeScript/JavaScript test coverage in small batches to avoid pi-lens/LSP overload.
+  verify:
+    test_command: pnpm test
+    build_command: pnpm build
+    lint_command: pnpm lint
+    coverage_threshold: 0
+  archive:
+    - Preserve archived change folders as audit trail; do not delete or rewrite archived changes.
+
 notes:
-  - Next.js 16 docs under node_modules/next/dist/docs must be consulted before route/component changes.
   - Currency for store work is Peruvian soles (S/.) with integer minor units in persistence/business logic.
   - Use SDD/OpenSpec for non-trivial store slices.
-  - For RED tests against new TypeScript/JavaScript modules, create minimal stubs first; tests should fail by behavior, not missing imports, to avoid pi-lens/LSP OOM crashes.
