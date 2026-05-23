@@ -2,7 +2,19 @@
 
 ## Proposito actual
 
-Frontend Next.js 16 de Obstedesign enfocado en autenticacion y acceso:
+Frontend Next.js 16 de Obstedesign con base operativa de tienda y administracion:
+
+- autenticacion y acceso con credenciales y Google
+- roles `cliente` / `administrador` con `viewMode` por sesion
+- admin de productos para crear, editar, publicar y archivar catalogo
+- carrito persistente para usuarios anonimos y autenticados
+- checkout base con creacion de orden y snapshot inmutable de compra
+- panel admin de pedidos con listado, detalle, filtros y cambio de estado `pending|confirmed`
+- historial de pedidos del cliente autenticado con detalle de compra
+
+## Estado actual del producto
+
+### Implementado
 
 - login con credenciales en `/`
 - registro en `/registro`
@@ -11,6 +23,21 @@ Frontend Next.js 16 de Obstedesign enfocado en autenticacion y acceso:
 - recuperacion y restablecimiento de contrasena
 - resolucion de rol (`cliente` / `administrador`)
 - `viewMode` por sesion para que administradores alternen entre vista cliente y admin
+- CRUD admin de productos con validaciones y revalidacion
+- add-to-cart desde detalle de producto y vista `/carrito`
+- carrito persistente con soporte anonimo/autenticado
+- checkout base con creacion de orden
+- confirmacion publica de orden por token
+- admin de pedidos con filtros por estado y busqueda
+- historial de pedidos en `/perfil/pedidos` y detalle en `/perfil/pedidos/[id]`
+
+### Fuera de alcance actual
+
+- pagos online
+- envio, impuestos y facturacion
+- historial de pedidos para compras invitadas/no autenticadas
+- fulfillment/logistica
+- analytics, exportaciones y operaciones bulk de pedidos
 
 ## Setup local
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { User, Settings, LogOut, ChevronDown } from "lucide-react";
+import { User, Settings, LogOut, ChevronDown, ShoppingBag } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,6 +94,15 @@ export function UserMenu({ currentViewMode }) {
           <Link href="/perfil" className="cursor-pointer hover:bg-primary/10">
             <User className="mr-2 h-4 w-4" />
             Mi cuenta
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link
+            href="/perfil/pedidos"
+            className="cursor-pointer hover:bg-primary/10"
+          >
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            Mis pedidos
           </Link>
         </DropdownMenuItem>
         {isAdmin && currentViewMode === VIEW_MODE_CLIENTE && (

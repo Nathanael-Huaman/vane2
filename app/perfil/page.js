@@ -5,7 +5,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { User, Shield, ShoppingBag, AlertTriangle } from "lucide-react";
 import { AdminViewModeSwitcher } from "@/components/admin-view-mode-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -153,6 +155,9 @@ export default async function PerfilPage() {
                       Este contenido solo es visible para usuarios con rol
                       cliente.
                     </p>
+                    <Button className="mt-4 w-full" asChild>
+                      <Link href="/perfil/pedidos">Mis pedidos</Link>
+                    </Button>
                   </CardContent>
                 </Card>
               )}
