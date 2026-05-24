@@ -148,16 +148,28 @@ async function main() {
     await withEnv(
       {
         NODE_ENV: "production",
+        RATE_LIMIT_KEY_SECRET: "test-rate-limit-secret",
+        REDIS_URL: undefined,
+        RATE_LIMIT_REST_URL: "https://redis.example.test",
+        RATE_LIMIT_REST_TOKEN: "redis-test-token",
         BREVO_API_KEY: "brevo-test-key",
         EMAIL_FROM: "noreply@obstedesign.com",
         EMAIL_FROM_NAME: "Obstedesign",
       },
       async () => {
-        global.fetch = async () =>
-          new Response(JSON.stringify({ messageId: "<public-flow-message-id>" }), {
+        global.fetch = async (input: string | URL | Request) => {
+          if (String(input).startsWith("https://redis.example.test")) {
+            return new Response(JSON.stringify([{ result: 1 }, { result: "OK" }, { result: 60 }]), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          return new Response(JSON.stringify({ messageId: "<public-flow-message-id>" }), {
             status: 201,
             headers: { "Content-Type": "application/json" },
           });
+        };
 
         const result = await requestPasswordReset(TEST_CLIENTE_EMAIL, {
           baseUrl: "http://localhost:3000",
