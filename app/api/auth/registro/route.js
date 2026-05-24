@@ -1,6 +1,35 @@
 import { NextResponse } from "next/server";
-import { registrarUsuario } from "@/lib/server/user/registro";
-import { logError } from "@/lib/server/shared";
+import { registrarUsuario } from "../../../../lib/server/user/registro.js";
+import { logError, logWarn } from "../../../../lib/server/logger.js";
+import {
+  buildRateLimitLogContext,
+  checkRateLimit,
+  NEUTRAL_THROTTLE_MESSAGE,
+} from "../../../../lib/server/security/rate-limit.js";
+
+const REGISTRO_LIMIT = Object.freeze({
+  maxAttempts: 5,
+  windowMinutes: 15,
+});
+
+function getRequestActorParts(request, email) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  return {
+    email,
+    ip: forwardedFor?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown",
+    userAgent: request.headers.get("user-agent") || "unknown",
+  };
+}
+
+function buildRateLimitedJson(result) {
+  return NextResponse.json(
+    { error: NEUTRAL_THROTTLE_MESSAGE },
+    {
+      status: 429,
+      headers: { "Retry-After": String(result.retryAfterSeconds ?? 60) },
+    }
+  );
+}
 
 export async function POST(request) {
   let body;
@@ -14,6 +43,19 @@ export async function POST(request) {
   }
 
   const { email, password, confirmPassword } = body ?? {};
+
+  const rateLimit = await checkRateLimit({
+    surface: "auth:registro",
+    actorParts: getRequestActorParts(request, email),
+    limit: REGISTRO_LIMIT,
+  });
+  if (!rateLimit.allowed) {
+    logWarn("POST /api/auth/registro: solicitud limitada", {
+      action: "registro-route",
+      ...buildRateLimitLogContext(rateLimit),
+    });
+    return buildRateLimitedJson(rateLimit);
+  }
 
   try {
     const result = await registrarUsuario({ email, password, confirmPassword });

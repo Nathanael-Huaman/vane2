@@ -11,6 +11,10 @@ import {
 	createOrderFromCart,
 	getOrderByConfirmationToken,
 } from "../lib/server/store/orders.js";
+import {
+	deriveRateLimitActorKey,
+	NEUTRAL_THROTTLE_MESSAGE,
+} from "../lib/server/security/rate-limit.js";
 import { createRuntimePrismaClient } from "../lib/testing/prisma-runtime";
 
 async function getProductBySlug(
@@ -27,6 +31,57 @@ async function assertRejectsWithMessage(
 	pattern: RegExp,
 ) {
 	await assert.rejects(action, pattern);
+}
+
+async function withEnv<T>(
+	values: Record<string, string | undefined>,
+	run: () => Promise<T>,
+) {
+	const previous = new Map<string, string | undefined>();
+	for (const [key, value] of Object.entries(values)) {
+		previous.set(key, process.env[key]);
+		if (value === undefined) delete process.env[key];
+		else process.env[key] = value;
+	}
+	try {
+		return await run();
+	} finally {
+		for (const [key, value] of previous.entries()) {
+			if (value === undefined) delete process.env[key];
+			else process.env[key] = value;
+		}
+	}
+}
+
+function assertNoRawValues(value: unknown, rawValues: string[]) {
+	const text = JSON.stringify(value).toLowerCase();
+	for (const rawValue of rawValues) {
+		assert.equal(text.includes(rawValue.toLowerCase()), false, `leaked raw value: ${rawValue}`);
+	}
+}
+
+function assertCheckoutThrottleTelemetry(entries: unknown[][], decision: string) {
+	const text = JSON.stringify(entries);
+	assert.equal(text.includes('"surface":"checkout"'), true);
+	assert.equal(text.includes(`"decision":"${decision}"`), true);
+	assert.equal(text.includes("retryAfterSeconds"), true);
+	assert.equal(text.includes('"store"'), false);
+}
+
+async function captureConsole(run: () => Promise<void>) {
+	const entries: unknown[][] = [];
+	const original = { log: console.log, warn: console.warn, error: console.error };
+	console.log = (...args: unknown[]) => entries.push(["log", ...args]);
+	console.warn = (...args: unknown[]) => entries.push(["warn", ...args]);
+	console.error = (...args: unknown[]) => entries.push(["error", ...args]);
+	try {
+		await run();
+	} finally {
+		console.log = original.log;
+		console.warn = original.warn;
+		console.error = original.error;
+	}
+	return entries;
 }
 
 async function resetCheckoutData(prisma: ReturnType<typeof createRuntimePrismaClient>) {
@@ -67,9 +122,15 @@ function formData(input: Record<string, string>) {
 	return data;
 }
 
-async function installCheckoutActionTestDeps(token: string, redirects: string[], revalidated: string[]) {
+async function installCheckoutActionTestDeps(
+	token: string,
+	redirects: string[],
+	revalidated: string[],
+	requestHeaders: Record<string, string> = {},
+) {
 	await __setCheckoutActionTestDependencies({
 		cookies: async () => ({ get: (name: string) => (name === "store_cart_token" ? { value: token } : undefined) }),
+		headers: async () => new Headers({ "user-agent": "CheckoutActionTest/1.0", ...requestHeaders }),
 		getOptionalAuthenticatedSession: async () => null,
 		revalidatePath: (path: string) => revalidated.push(path),
 		redirect: (path: string) => {
@@ -299,6 +360,134 @@ async function main() {
 			1,
 		);
 		await prisma.product.update({ where: { id: cushion.id }, data: { stockQuantity: cushion.stockQuantity } });
+
+		await addCartItem({ anonymousToken: "action-throttled-cart" }, { productId: cushion.id, quantity: 1 });
+		const rawThrottleEmail = "Checkout.Leak@example.com";
+		const rawThrottleIp = "198.51.100.44";
+		const rawThrottleAgent = "RawCheckoutAgent/1.0";
+		const ordersBeforeThrottle = await prisma.order.count();
+		const orderItemsBeforeThrottle = await prisma.orderItem.count();
+		const stockBeforeThrottle = (await prisma.product.findUnique({ where: { id: cushion.id } }))?.stockQuantity;
+		redirects = [];
+		revalidated = [];
+		await installCheckoutActionTestDeps(
+			"action-throttled-cart",
+			redirects,
+			revalidated,
+			{ "x-forwarded-for": rawThrottleIp, "user-agent": rawThrottleAgent },
+		);
+		let throttledResult: Awaited<ReturnType<typeof checkoutAction>> | undefined;
+		const throttleLogs = await captureConsole(async () => {
+			throttledResult = await withEnv(
+				{
+					NODE_ENV: "production",
+					RATE_LIMIT_KEY_SECRET: undefined,
+					REDIS_URL: undefined,
+					RATE_LIMIT_REST_URL: undefined,
+					RATE_LIMIT_REST_TOKEN: undefined,
+				},
+				() =>
+					checkoutAction(
+						{ ok: false, data: null, error: null },
+						formData({ customerName: "Cliente Checkout", customerEmail: rawThrottleEmail }),
+					),
+			);
+		});
+		assert.equal(throttledResult?.ok, false);
+		assert.equal(throttledResult?.error.status, 429);
+		assert.equal(throttledResult?.error.message, NEUTRAL_THROTTLE_MESSAGE);
+		assert.equal(await prisma.order.count(), ordersBeforeThrottle);
+		assert.equal(await prisma.orderItem.count(), orderItemsBeforeThrottle);
+		assert.equal(
+			(await prisma.product.findUnique({ where: { id: cushion.id } }))?.stockQuantity,
+			stockBeforeThrottle,
+		);
+		assert.equal(
+			await prisma.cartItem.count({ where: { cart: { anonymousToken: "action-throttled-cart" } } }),
+			1,
+		);
+		assert.deepEqual(revalidated, []);
+		assert.deepEqual(redirects, []);
+		assertNoRawValues(
+			{ throttledResult, throttleLogs },
+			[rawThrottleEmail, rawThrottleIp, rawThrottleAgent, "action-throttled-cart"],
+		);
+		assertCheckoutThrottleTelemetry(throttleLogs, "fail-closed");
+
+		await addCartItem({ anonymousToken: "action-rest-throttled-cart" }, { productId: cushion.id, quantity: 1 });
+		const rawRestEmail = "Checkout.Rest@example.com";
+		const rawRestIp = "198.51.100.45";
+		const rawRestAgent = "RawCheckoutAgent/2.0";
+		const ordersBeforeRestThrottle = await prisma.order.count();
+		const stockBeforeRestThrottle = (await prisma.product.findUnique({ where: { id: cushion.id } }))?.stockQuantity;
+		redirects = [];
+		revalidated = [];
+		await installCheckoutActionTestDeps(
+			"action-rest-throttled-cart",
+			redirects,
+			revalidated,
+			{ "x-forwarded-for": rawRestIp, "user-agent": rawRestAgent },
+		);
+		let restRequestBody = "";
+		let restThrottledResult: Awaited<ReturnType<typeof checkoutAction>> | undefined;
+		const originalFetch = globalThis.fetch;
+		globalThis.fetch = (async (_input, init) => {
+			restRequestBody = String(init?.body ?? "");
+			return new Response(JSON.stringify([{ result: 6 }, { result: "OK" }, { result: 45 }]), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+		try {
+			const restThrottleLogs = await captureConsole(async () => {
+				restThrottledResult = await withEnv(
+					{
+						NODE_ENV: "production",
+						RATE_LIMIT_KEY_SECRET: "checkout-rest-secret",
+						REDIS_URL: undefined,
+						RATE_LIMIT_REST_URL: "https://redis.example.test",
+						RATE_LIMIT_REST_TOKEN: "checkout-rest-token",
+					},
+					() =>
+						checkoutAction(
+							{ ok: false, data: null, error: null },
+							formData({ customerName: "Cliente Checkout", customerEmail: rawRestEmail }),
+						),
+				);
+			});
+			const expectedActorKey = deriveRateLimitActorKey({
+				surface: "checkout",
+				actorParts: {
+					cart: "action-rest-throttled-cart",
+					email: rawRestEmail,
+					ip: rawRestIp,
+					userAgent: rawRestAgent,
+				},
+				secret: "checkout-rest-secret",
+			});
+			assert.equal(restThrottledResult?.ok, false);
+			assert.equal(restThrottledResult?.error.status, 429);
+			assert.equal(restThrottledResult?.meta.retryAfterSeconds, 45);
+			assert.equal(restRequestBody.includes(expectedActorKey), true);
+			assert.equal(await prisma.order.count(), ordersBeforeRestThrottle);
+			assert.equal(
+				(await prisma.product.findUnique({ where: { id: cushion.id } }))?.stockQuantity,
+				stockBeforeRestThrottle,
+			);
+			assert.equal(
+				await prisma.cartItem.count({ where: { cart: { anonymousToken: "action-rest-throttled-cart" } } }),
+				1,
+			);
+			assert.deepEqual(revalidated, []);
+			assert.deepEqual(redirects, []);
+			assertNoRawValues(
+				{ restThrottledResult, restThrottleLogs, restRequestBody },
+				[rawRestEmail, rawRestIp, rawRestAgent, "action-rest-throttled-cart"],
+			);
+			assertCheckoutThrottleTelemetry(restThrottleLogs, "deny");
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 
 		await addCartItem({ anonymousToken: "action-success-cart" }, { productId: cushion.id, quantity: 1 });
 		redirects = [];

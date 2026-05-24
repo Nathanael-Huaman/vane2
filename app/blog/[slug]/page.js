@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublishedPostBySlug } from "@/lib/server/blog/blog-posts.js";
-import { parseMarkdownToHtml } from "@/lib/server/blog/markdown.js";
+import { parseMarkdownToHtml, sanitizeHtml } from "@/lib/server/blog/markdown.js";
 import {
   Card,
   CardContent,
@@ -55,7 +55,7 @@ export default async function BlogPostPage({ params }) {
     notFound();
   }
 
-  const contentHtml = parseMarkdownToHtml(post.content);
+  const contentHtml = sanitizeHtml(parseMarkdownToHtml(post.content));
 
   return (
     <div className="min-h-screen bg-background">
