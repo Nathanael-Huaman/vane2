@@ -7,6 +7,7 @@ function readIfExists(path) {
 
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const helper = readIfExists("lib/server/store/orders.js");
+const paginationHelper = readIfExists("lib/server/store/order-pagination.js");
 const listPage = readIfExists("app/perfil/pedidos/page.js");
 const detailPage = readIfExists("app/perfil/pedidos/[id]/page.js");
 const userMenu = readIfExists("components/user-menu.jsx");
@@ -53,9 +54,11 @@ check("package exposes customer-history runtime test", () => pkg.scripts?.["test
 check("full validation includes customer-history validator", () => pkg.scripts?.["test:validation"]?.includes("validate:store-customer-order-history"));
 check("full runtime includes customer-history runtime test", () => pkg.scripts?.["test:runtime"]?.includes("test:store-customer-order-history"));
 check("orders helper exports customer summary and detail lookups", () => /export\s+async\s+function\s+getCustomerOrderSummaries\s*\(/.test(helper) && /export\s+async\s+function\s+getCustomerOrderDetailById\s*\(/.test(helper));
-check("summary helper rejects blank user ids with an empty list", () => /if\s*\([^)]*!customerUserId[^)]*\)\s*return\s+\[\]/.test(summaryHelper));
+check("order pagination helper exports fixed parser and page result helpers", () => /export\s+const\s+ORDER_LIST_PAGE_SIZE\s*=\s*10/.test(paginationHelper) && /export\s+function\s+parseOrderListPage\s*\(/.test(paginationHelper) && /export\s+function\s+getOrderListQueryWindow\s*\(/.test(paginationHelper) && /export\s+function\s+toOrderListPageResult\s*\(/.test(paginationHelper) && !/Not implemented/.test(paginationHelper));
+check("summary helper rejects blank user ids with a paginated empty list", () => /if\s*\([^)]*!customerUserId[^)]*\)\s*return\s+toOrderListPageResult\(\[\],\s*page\)/.test(summaryHelper));
 check("summary helper scopes query by Order.userId", () => /findMany\s*\([\s\S]*where\s*:\s*\{\s*userId\s*:\s*customerUserId\s*\}/.test(summaryHelper));
 check("summary helper orders newest first with stable id tie-breaker", () => /orderBy\s*:\s*\[\s*\{\s*createdAt\s*:\s*"desc"\s*\}\s*,\s*\{\s*id\s*:\s*"asc"\s*\}\s*\]/.test(summaryHelper));
+check("summary helper applies bounded skip/take after ownership scope", () => /getOrderListQueryWindow/.test(summaryHelper) && /where\s*:\s*\{\s*userId\s*:\s*customerUserId\s*\}/.test(summaryHelper) && /skip\s*,[\s\S]*take\s*,/.test(summaryHelper) && /toOrderListPageResult/.test(summaryHelper));
 check("summary helper maps S/. totals and customer detail paths", () => /formatSolesPrice\(order\.totalMinorUnits\)/.test(helper) && /`\/perfil\/pedidos\/\$\{order\.id\}`/.test(helper));
 check("detail helper rejects blank user or order ids with null", () => /if\s*\([^)]*!customerUserId[\s\S]*!customerOrderId[^)]*\)\s*return\s+null/.test(detailHelper));
 check("detail helper enforces ownership in the query boundary", () => /findFirst\s*\([\s\S]*where\s*:\s*\{\s*id\s*:\s*customerOrderId\s*,\s*userId\s*:\s*customerUserId\s*\}/.test(detailHelper));
@@ -66,7 +69,9 @@ console.log("\nStore customer order history — PR 2 list route and navigation c
 check("list route exists at app/perfil/pedidos/page.js", () => listPageExists);
 check("list route enforces auth before customer order access", () => /resolvePageAuthContext/.test(listPage) && containsInOrder(listPage, "await resolvePageAuthContext", "await getCustomerOrderSummaries"));
 check("list route handles auth errors and unauthenticated users before loading orders", () => containsInOrder(listPage, "if (hasAuthError)", "await getCustomerOrderSummaries") && containsInOrder(listPage, "if (!isAuthenticated)", "await getCustomerOrderSummaries"));
+check("list route awaits searchParams and passes sanitized page", () => /CustomerOrdersPage\(\{\s*searchParams\s*\}\)/.test(listPage) && /await\s+searchParams/.test(listPage) && /const\s+page\s*=\s*parseOrderListPage\(resolvedSearchParams\)/.test(listPage) && /getCustomerOrderSummaries\(user\.id,\s*\{\s*page\s*\}\)/.test(listPage));
 check("list route renders owned order summaries and empty-history state", () => /orders\.map\(\s*\(?order/.test(listPage) && /order\.statusLabel/.test(listPage) && /order\.totalLabel/.test(listPage) && /No hay pedidos/.test(listPage));
+check("list route renders bounded previous and next pagination links", () => /pagination\.hasPrevious/.test(listPage) && /pagination\.hasNext/.test(listPage) && /query\.set\("page"/.test(listPage) && /Anterior/.test(listPage) && /Siguiente/.test(listPage));
 check("list route links each order summary to its detail route", () => /href=\{order\.detailPath\}/.test(listPage) && /Ver detalle/.test(listPage));
 check("user menu exposes Mis pedidos navigation", () => /href="\/perfil\/pedidos"/.test(userMenu) && /Mis pedidos/.test(userMenu));
 check("profile page exposes Mis pedidos entry point", () => /href="\/perfil\/pedidos"/.test(profilePage) && /Mis pedidos/.test(profilePage));

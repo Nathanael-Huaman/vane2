@@ -7,6 +7,8 @@ function readIfExists(path) {
 
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const helper = readIfExists("lib/server/store/admin-orders.js");
+const listUrlHelper = readIfExists("lib/server/store/admin-order-list-url.js");
+const paginationHelper = readIfExists("lib/server/store/order-pagination.js");
 const action = readIfExists("lib/actions/store-admin-orders.js");
 const actionDeps = readIfExists("lib/actions/store-admin-orders-dependencies.js");
 const listPage = readIfExists("app/admin/tienda/pedidos/page.js");
@@ -70,18 +72,30 @@ check("package exposes admin orders runtime test", () => pkg.scripts?.["test:sto
 check("full validation includes admin orders validator", () => pkg.scripts?.["test:validation"]?.includes("validate:store-admin-orders-view"));
 check("full runtime includes admin orders runtime test", () => pkg.scripts?.["test:runtime"]?.includes("test:store-admin-orders-view"));
 check("admin orders helper exports PR A functions", () => /export\s+function\s+parseAdminOrderFilters\s*\(/.test(helper) && /export\s+async\s+function\s+getAdminOrderSummaries\s*\(/.test(helper));
+check("admin order list URL helper exports sanitized builder", () => /export\s+function\s+buildAdminOrderListPath\s*\(/.test(listUrlHelper) && /filters\.status/.test(listUrlHelper) && /filters\.q/.test(listUrlHelper) && /parseOrderListPage/.test(listUrlHelper) && !/Not implemented/.test(listUrlHelper));
+check("order pagination helper exports fixed parser and page result helpers", () => /export\s+const\s+ORDER_LIST_PAGE_SIZE\s*=\s*10/.test(paginationHelper) && /export\s+function\s+parseOrderListPage\s*\(/.test(paginationHelper) && /export\s+function\s+getOrderListQueryWindow\s*\(/.test(paginationHelper) && /export\s+function\s+toOrderListPageResult\s*\(/.test(paginationHelper) && !/Not implemented/.test(paginationHelper));
 check("list route exists at app/admin/tienda/pedidos/page.js", () => fs.existsSync("app/admin/tienda/pedidos/page.js"));
 check("list page enforces server-side admin gate", () => /resolvePageAuthContext/.test(listPage) && /isAuthenticated/.test(listPage) && /isAdmin/.test(listPage) && /isAdminView/.test(listPage) && defaultFunctionContainsInOrder(listPage, "AdminStoreOrdersPage", "resolvePageAuthContext", "getAdminOrderSummaries") && defaultFunctionContainsInOrder(listPage, "AdminStoreOrdersPage", "!isAdmin || !isAdminView", "getAdminOrderSummaries"));
 check("list page awaits searchParams", () => /await\s+searchParams/.test(listPage));
 check("list page uses parsed status and q filters", () => /parseAdminOrderFilters/.test(listPage) && /name="status"/.test(listPage) && /name="q"/.test(listPage));
+check("list page parses sanitized page and passes it to admin summaries", () => /parseOrderListPage/.test(listPage) && /const\s+page\s*=\s*parseOrderListPage\(resolvedSearchParams\)/.test(listPage) && /getAdminOrderSummaries\(filters,\s*\{\s*page\s*\}\)/.test(listPage));
 check("list page exposes only status and q filter fields", () => {
 	const names = getFilterFormNames(listPage);
 	return names.length > 0 && names.every((name) => ["status", "q"].includes(name));
 });
 check("list page renders invalid status filter state", () => /invalidStatus/.test(listPage) && /filtro de estado no es valido|filtro de estado no es válido/i.test(listPage));
 check("helper uses explicit safe list order select", () => ["id", "customerName", "customerEmail", "status", "subtotalMinorUnits", "totalMinorUnits", "createdAt", "updatedAt"].every((field) => new RegExp(`${field}\\s*:\\s*true`).test(helper)));
+check("helper applies bounded skip/take after approved filters", () => {
+	const summaryHelper = exportedFunctionSlice(helper, "getAdminOrderSummaries");
+	return /getOrderListQueryWindow/.test(summaryHelper) && /where/.test(summaryHelper) && /skip\s*,[\s\S]*take\s*,/.test(summaryHelper) && /toOrderListPageResult/.test(summaryHelper) && /orderBy\s*:\s*\[\s*\{\s*createdAt\s*:\s*"desc"\s*\}\s*,\s*\{\s*id\s*:\s*"asc"\s*\}\s*\]/.test(summaryHelper);
+});
+check("helper returns paginated empty result for invalid status without querying", () => {
+	const summaryHelper = exportedFunctionSlice(helper, "getAdminOrderSummaries");
+	return /if\s*\(filters\.invalidStatus\)\s*return\s+toOrderListPageResult\(\[\],\s*page\)/.test(summaryHelper) && containsInOrder(summaryHelper, "filters.invalidStatus", "prisma.order.findMany");
+});
 check("helper and list page omit private token material", () => omitsForbiddenTokenMaterial(`${helper}\n${listPage}`));
-check("list UI omits date filters and pagination controls", () => !/name="(date|from|to|page|sort)"/i.test(listPage) && !/paginaci[oó]n|siguiente página|página siguiente/i.test(listPage));
+check("list UI omits date/sort fields while rendering pagination controls", () => !/name="(date|from|to|page|sort)"/i.test(listPage) && /pagination\.hasPrevious/.test(listPage) && /pagination\.hasNext/.test(listPage) && /Anterior/.test(listPage) && /Siguiente/.test(listPage));
+check("pagination and status return navigation use sanitized filters and current page", () => /buildAdminOrderListPath/.test(listPage) && /const\s+returnTo\s*=\s*buildAdminOrderListPath\(filters,\s*pagination\.page\)/.test(listPage) && /buildAdminOrderListPath\(filters,\s*previousPage\)/.test(listPage) && /buildAdminOrderListPath\(filters,\s*nextPage\)/.test(listPage) && !/toReturnPath\(resolvedSearchParams/.test(listPage) && !/appendAdminOrderFilterQuery/.test(listPage));
 check("list UI omits exports, bulk actions, and order-content editing", () => !/(exportar|csv|bulk|lote|editar pedido|editar cliente|editar total|editar stock)/i.test(listPage));
 check("list UI omits payment, shipping, invoice, and fulfillment controls", () => !/(pago|payment|env[ií]o|shipping|factura|invoice|fulfillment|despacho)/i.test(listPage));
 
