@@ -9,6 +9,7 @@ import { parseMarkdownToHtml, sanitizeHtml } from "../lib/server/blog/markdown.j
 import { buildSilentUnauthenticatedSessionResponse, isStaticGenerationAuthSessionMiss } from "../lib/server/auth/session-error.js";
 import { buildRateLimitLogContext, buildThrottleResponse, checkRateLimit, createMemoryRateLimitStore, deriveRateLimitActorKey } from "../lib/server/security/rate-limit.js";
 import { buildSecurityHeaders } from "../lib/server/security/security-headers.js";
+import { buildServerActionConfig, parseServerActionAllowedOrigins } from "../lib/server/security/server-action-origin-policy.js";
 import nextConfig from "../next.config.mjs";
 
 let passed = 0;
@@ -52,6 +53,25 @@ function assertNoRawValues(value: unknown, rawValues: string[]) {
 
 function headersToRecord(headers: Array<{ key: string; value: string }>) {
 	return Object.fromEntries(headers.map(({ key, value }) => [key.toLowerCase(), value]));
+}
+
+async function loadFreshNextConfigForEnv(values: Record<string, string | undefined>) {
+	let loadedConfig: typeof nextConfig | undefined;
+	await withEnv(values, async () => {
+		const cacheKey = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+		const importedConfig = (await import(new URL(`../next.config.mjs?server-action-origin-policy=${cacheKey}`, import.meta.url).href)) as { default: typeof nextConfig };
+		loadedConfig = importedConfig.default;
+	});
+
+	assert.ok(loadedConfig, "expected next config to load");
+	return loadedConfig;
+}
+
+async function loadProductionSecurityValidator() {
+	const cacheKey = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+	return (await import(new URL(`./validate-production-security-controls.mjs?server-action-origin-policy=${cacheKey}`, import.meta.url).href)) as {
+		validateServerActionOriginPolicySources: (sources: { nextConfig?: string; envExample?: string; serverActionOriginPolicy?: string }) => Array<{ label: string; ok: boolean; remediation?: string }>;
+	};
 }
 
 function buildFormRequest(fields: Record<string, string>, headers: Record<string, string> = {}) {
@@ -327,6 +347,48 @@ await test("next config wires app-level security headers for all routes", async 
 	});
 });
 
+await test("server action origin policy keeps default same-host posture unconfigured", async () => {
+	await withEnv({ SERVER_ACTION_ALLOWED_ORIGINS: undefined }, async () => {
+		assert.deepEqual(parseServerActionAllowedOrigins(process.env), []);
+		assert.deepEqual(buildServerActionConfig(process.env), {});
+
+		const config = await loadFreshNextConfigForEnv({ SERVER_ACTION_ALLOWED_ORIGINS: undefined });
+		assert.equal(config.serverActions, undefined);
+	});
+});
+
+await test("server action origin policy accepts exact deployment hosts and dedupes", async () => {
+	const env = {
+		SERVER_ACTION_ALLOWED_ORIGINS: "Store.Example.com, checkout.example.com:8443, store.example.com",
+	};
+
+	assert.deepEqual(parseServerActionAllowedOrigins(env), ["store.example.com", "checkout.example.com:8443"]);
+	assert.deepEqual(buildServerActionConfig(env), {
+		serverActions: { allowedOrigins: ["store.example.com", "checkout.example.com:8443"] },
+	});
+
+	const config = await loadFreshNextConfigForEnv(env);
+	assert.deepEqual(config.serverActions, { allowedOrigins: ["store.example.com", "checkout.example.com:8443"] });
+});
+
+await test("server action origin policy rejects wildcard or broad allowed hosts", () => {
+	for (const origin of ["*", "**", "*.example.com", "shop.*.example.com", "example.*"]) {
+		assert.throws(
+			() => parseServerActionAllowedOrigins({ SERVER_ACTION_ALLOWED_ORIGINS: origin }),
+			/SERVER_ACTION_ALLOWED_ORIGINS.*exact host\[:port\].*wildcard/i,
+		);
+	}
+});
+
+await test("server action origin policy rejects malformed host entries", () => {
+	for (const origin of ["https://store.example.com", "http://store.example.com", "null", "store.example.com/path", "store.example.com?next=/admin", "store.example.com#fragment", "store.example.com,,api.example.com", " ", "store.example.com:badport"]) {
+		assert.throws(
+			() => parseServerActionAllowedOrigins({ SERVER_ACTION_ALLOWED_ORIGINS: origin }),
+			/SERVER_ACTION_ALLOWED_ORIGINS.*exact host\[:port\]/i,
+		);
+	}
+});
+
 await test("security header rollout mode is documented for operators", () => {
 	const envExample = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
 	assert.match(envExample, /SECURITY_HEADERS_CSP_MODE="report-only"/);
@@ -341,6 +403,16 @@ await test("production rate-limit deploy variables are documented as real extern
 	assert.match(envExample, /REDIS_URL/);
 	assert.match(envExample, /RATE_LIMIT_REST_URL/);
 	assert.match(envExample, /RATE_LIMIT_REST_TOKEN/);
+});
+
+await test("server action allowed origin contract is documented for operators", () => {
+	const envExample = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
+
+	assert.match(envExample, /SERVER_ACTION_ALLOWED_ORIGINS/);
+	assert.match(envExample, /exact host\[:port\]/i);
+	assert.match(envExample, /Coolify|proxy/i);
+	assert.match(envExample, /wildcard/i);
+	assert.match(envExample, /without scheme/i);
 });
 
 await test("static-generation auth request-scope misses become silent unauthenticated responses only during build", () => {
@@ -366,6 +438,50 @@ await test("production security validator reports limiter, header, and neutral t
 	assert.match(output, /Redis TCP primary store/);
 	assert.match(output, /header wiring covers next config or proxy\/middleware/);
 	assert.match(output, /neutral throttle responses are wired/);
+	assert.match(output, /Server Action origin policy/);
+	assert.match(output, /Server Action origin helper is wired into next config/);
+	assert.match(output, /Server Action allowedOrigins rejects wildcard, broad, or null literals/);
+});
+
+await test("production security validator rejects unsafe server action allowed origins", async () => {
+	const { validateServerActionOriginPolicySources } = await loadProductionSecurityValidator();
+	const unsafeResults = validateServerActionOriginPolicySources({
+		nextConfig: `const nextConfig = { serverActions: { allowedOrigins: ["*", "*.example.com", "https://store.example.com"] } };`,
+		envExample: `SERVER_ACTION_ALLOWED_ORIGINS="store.example.com"`,
+		serverActionOriginPolicy: `export function buildServerActionConfig() {}`,
+	});
+	const unsafeBroadCheck = unsafeResults.find((result) => result.label === "Server Action allowedOrigins rejects wildcard, broad, or null literals");
+
+	assert.equal(unsafeBroadCheck?.ok, false);
+	assert.match(unsafeBroadCheck?.remediation ?? "", /exact host\[:port\]/i);
+
+	const nullOriginResults = validateServerActionOriginPolicySources({
+		nextConfig: `const nextConfig = { serverActions: { allowedOrigins: ["null"] } };`,
+		envExample: `SERVER_ACTION_ALLOWED_ORIGINS="store.example.com"`,
+		serverActionOriginPolicy: `const SERVER_ACTION_ALLOWED_ORIGINS = "SERVER_ACTION_ALLOWED_ORIGINS";`,
+	});
+	const nullOriginCheck = nullOriginResults.find((result) => result.label === "Server Action allowedOrigins rejects wildcard, broad, or null literals");
+
+	assert.equal(nullOriginCheck?.ok, false);
+	assert.match(nullOriginCheck?.remediation ?? "", /null/i);
+
+	const safeResults = validateServerActionOriginPolicySources({
+		nextConfig: `import { buildServerActionConfig } from "./lib/server/security/server-action-origin-policy.js";
+const nextConfig = { ...buildServerActionConfig(), async headers() {} };`,
+		envExample: `# Server Action origins for proxy deployments
+# SERVER_ACTION_ALLOWED_ORIGINS="store.example.com,checkout.example.com:8443"
+# Use exact host[:port] entries only, without scheme, path, query, wildcard, or null-origin values.`,
+		serverActionOriginPolicy: `const SERVER_ACTION_ALLOWED_ORIGINS = "SERVER_ACTION_ALLOWED_ORIGINS";`,
+	});
+
+	assert.deepEqual(
+		safeResults.map(({ label, ok }) => [label, ok]),
+		[
+			["Server Action origin helper is wired into next config", true],
+			["Server Action origin env contract is documented", true],
+			["Server Action allowedOrigins rejects wildcard, broad, or null literals", true],
+		],
+	);
 });
 
 await test("package scripts expose production security validation in full suites", () => {
