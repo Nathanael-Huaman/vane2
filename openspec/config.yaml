@@ -12,7 +12,7 @@ context: |
   Architecture: app/ route segments with server actions in lib/actions, server domain modules in lib/server, UI primitives in components/ui.
   Testing: script-based validation/runtime tests via node/tsx plus Playwright E2E; CI runs pnpm lint, pnpm test, pnpm build.
   Style: ESLint 9 with next/core-web-vitals; no dedicated formatter script detected.
-  Rule: read relevant Next.js docs under node_modules/next/dist/docs before writing Next.js code; this install currently has no docs files detected.
+  Rule: read relevant Next.js docs under node_modules/next/dist/docs before writing Next.js code; docs are present in this install and must be checked for relevant App Router APIs before edits.
 
 testing:
   strict_tdd: true
