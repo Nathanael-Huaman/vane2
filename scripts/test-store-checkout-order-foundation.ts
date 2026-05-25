@@ -127,6 +127,7 @@ async function installCheckoutActionTestDeps(
 	redirects: string[],
 	revalidated: string[],
 	requestHeaders: Record<string, string> = {},
+	overrides: Record<string, unknown> = {},
 ) {
 	await __setCheckoutActionTestDependencies({
 		cookies: async () => ({ get: (name: string) => (name === "store_cart_token" ? { value: token } : undefined) }),
@@ -137,7 +138,42 @@ async function installCheckoutActionTestDeps(
 			redirects.push(path);
 			throw Object.assign(new Error("NEXT_REDIRECT"), { path });
 		},
+		...overrides,
 	});
+}
+
+async function assertCaptchaRejectedBeforeMutation({
+	prisma,
+	token,
+	form,
+	productId,
+	stockBefore,
+	verifier,
+}: {
+	prisma: ReturnType<typeof createRuntimePrismaClient>;
+	token: string;
+	form: FormData;
+	productId: string;
+	stockBefore: number | null | undefined;
+	verifier: (input: { token: string | null; ip: string; userAgent: string }) => Promise<{ ok: boolean; reason?: string }>;
+}) {
+	const redirects: string[] = [];
+	const revalidated: string[] = [];
+	const ordersBefore = await prisma.order.count();
+	const orderItemsBefore = await prisma.orderItem.count();
+	await installCheckoutActionTestDeps(token, redirects, revalidated, {}, { verifyCheckoutCaptcha: verifier });
+
+	const result = await checkoutAction({ ok: false, data: null, error: null }, form);
+
+	assert.equal(result?.ok, false);
+	assert.equal(result?.error.status, 400);
+	assert.equal(result?.error.message, "No se pudo validar el checkout. Intenta nuevamente.");
+	assert.equal(await prisma.order.count(), ordersBefore);
+	assert.equal(await prisma.orderItem.count(), orderItemsBefore);
+	assert.equal((await prisma.product.findUnique({ where: { id: productId } }))?.stockQuantity, stockBefore);
+	assert.equal(await prisma.cartItem.count({ where: { cart: { anonymousToken: token } } }), 1);
+	assert.deepEqual(revalidated, []);
+	assert.deepEqual(redirects, []);
 }
 
 async function main() {
@@ -330,10 +366,10 @@ async function main() {
 		await addCartItem({ anonymousToken: "action-invalid-contact-cart" }, { productId: cushion.id, quantity: 1 });
 		let redirects: string[] = [];
 		let revalidated: string[] = [];
-		await installCheckoutActionTestDeps("action-invalid-contact-cart", redirects, revalidated);
+		await installCheckoutActionTestDeps("action-invalid-contact-cart", redirects, revalidated, {}, { verifyCheckoutCaptcha: async () => ({ ok: true }) });
 		const invalidContact = await checkoutAction(
 			{ ok: false, data: null, error: null },
-			formData({ customerName: "", customerEmail: "bad-email" }),
+			formData({ customerName: "", customerEmail: "bad-email", checkoutCaptchaToken: "valid-token" }),
 		);
 		assert.equal(invalidContact.ok, false);
 		assert.equal(invalidContact.error.status, 400);
@@ -347,10 +383,10 @@ async function main() {
 		await prisma.product.update({ where: { id: cushion.id }, data: { stockQuantity: 1 } });
 		redirects = [];
 		revalidated = [];
-		await installCheckoutActionTestDeps("action-stale-cart", redirects, revalidated);
+		await installCheckoutActionTestDeps("action-stale-cart", redirects, revalidated, {}, { verifyCheckoutCaptcha: async () => ({ ok: true }) });
 		const stale = await checkoutAction(
 			{ ok: false, data: null, error: null },
-			formData({ customerName: "Cliente", customerEmail: "cliente@example.com" }),
+			formData({ customerName: "Cliente", customerEmail: "cliente@example.com", checkoutCaptchaToken: "valid-token" }),
 		);
 		assert.equal(stale.ok, false);
 		assert.equal(stale.error.status, 400);
@@ -413,6 +449,34 @@ async function main() {
 			[rawThrottleEmail, rawThrottleIp, rawThrottleAgent, "action-throttled-cart"],
 		);
 		assertCheckoutThrottleTelemetry(throttleLogs, "fail-closed");
+		let captchaVerifierCalls = 0;
+		redirects = [];
+		revalidated = [];
+		await installCheckoutActionTestDeps(
+			"action-throttled-cart",
+			redirects,
+			revalidated,
+			{ "x-forwarded-for": rawThrottleIp, "user-agent": rawThrottleAgent },
+			{ verifyCheckoutCaptcha: async () => {
+				captchaVerifierCalls++;
+				return { ok: true };
+			} },
+		);
+		const throttledBeforeCaptcha = await withEnv(
+			{
+				NODE_ENV: "production",
+				RATE_LIMIT_KEY_SECRET: undefined,
+				REDIS_URL: undefined,
+				RATE_LIMIT_REST_URL: undefined,
+				RATE_LIMIT_REST_TOKEN: undefined,
+			},
+			() => checkoutAction(
+				{ ok: false, data: null, error: null },
+				formData({ customerName: "Cliente Checkout", customerEmail: rawThrottleEmail, checkoutCaptchaToken: "valid-token" }),
+			),
+		);
+		assert.equal(throttledBeforeCaptcha?.error.status, 429);
+		assert.equal(captchaVerifierCalls, 0);
 
 		await addCartItem({ anonymousToken: "action-rest-throttled-cart" }, { productId: cushion.id, quantity: 1 });
 		const rawRestEmail = "Checkout.Rest@example.com";
@@ -492,12 +556,12 @@ async function main() {
 		await addCartItem({ anonymousToken: "action-success-cart" }, { productId: cushion.id, quantity: 1 });
 		redirects = [];
 		revalidated = [];
-		await installCheckoutActionTestDeps("action-success-cart", redirects, revalidated);
+		await installCheckoutActionTestDeps("action-success-cart", redirects, revalidated, {}, { verifyCheckoutCaptcha: async () => ({ ok: true }) });
 		await assert.rejects(
 			() =>
 				checkoutAction(
 					{ ok: false, data: null, error: null },
-					formData({ customerName: "Cliente Action", customerEmail: "ACTION@EXAMPLE.COM" }),
+					formData({ customerName: "Cliente Action", customerEmail: "ACTION@EXAMPLE.COM", checkoutCaptchaToken: "valid-token" }),
 				),
 			(error: Error & { path?: string }) => {
 				assert.match(error.path ?? "", /^\/pedido\/confirmacion\/[a-f0-9]{64}$/);
@@ -510,6 +574,77 @@ async function main() {
 			await prisma.cartItem.count({ where: { cart: { anonymousToken: "action-success-cart" } } }),
 			0,
 		);
+
+		for (const scenario of [
+			{ token: "action-captcha-missing-cart", fields: {}, verifierResult: { ok: false, reason: "missing" } },
+			{ token: "action-captcha-invalid-cart", fields: { checkoutCaptchaToken: "invalid-token" }, verifierResult: { ok: false, reason: "invalid" } },
+			{ token: "action-captcha-error-cart", fields: { checkoutCaptchaToken: "error-token" }, verifierResult: { ok: false, reason: "unavailable" } },
+		]) {
+			await addCartItem({ anonymousToken: scenario.token }, { productId: cushion.id, quantity: 1 });
+			const stockBeforeCaptcha = (await prisma.product.findUnique({ where: { id: cushion.id } }))?.stockQuantity;
+			await assertCaptchaRejectedBeforeMutation({
+				prisma,
+				token: scenario.token,
+				form: formData({ customerName: "Cliente Captcha", customerEmail: "captcha@example.com", ...scenario.fields }),
+				productId: cushion.id,
+				stockBefore: stockBeforeCaptcha,
+				verifier: async () => scenario.verifierResult,
+			});
+		}
+
+		await addCartItem({ anonymousToken: "action-captcha-valid-cart" }, { productId: cushion.id, quantity: 1 });
+		let validCaptchaInput: { token: string | null; ip: string; userAgent: string } | undefined;
+		redirects = [];
+		revalidated = [];
+		await installCheckoutActionTestDeps("action-captcha-valid-cart", redirects, revalidated, {}, {
+			verifyCheckoutCaptcha: async (input: { token: string | null; ip: string; userAgent: string }) => {
+				validCaptchaInput = input;
+				return { ok: true };
+			},
+		});
+		await assert.rejects(
+			() => checkoutAction(
+				{ ok: false, data: null, error: null },
+				formData({ customerName: "Cliente Captcha", customerEmail: "captcha@example.com", checkoutCaptchaToken: "valid-token" }),
+			),
+			(error: Error & { path?: string }) => {
+				assert.match(error.path ?? "", /^\/pedido\/confirmacion\/[a-f0-9]{64}$/);
+				return true;
+			},
+		);
+		assert.equal(validCaptchaInput?.token, "valid-token");
+		assert.equal(await prisma.cartItem.count({ where: { cart: { anonymousToken: "action-captcha-valid-cart" } } }), 0);
+
+		await prisma.usuario.upsert({
+			where: { email: "checkout-auth@example.com" },
+			update: { id: "cliente-regular-id", role: "cliente" },
+			create: { id: "cliente-regular-id", email: "checkout-auth@example.com", name: "Cliente Auth", role: "cliente" },
+		});
+		await addCartItem({ userId: "cliente-regular-id" }, { productId: cushion.id, quantity: 1 });
+		let signedInVerifierCalls = 0;
+		redirects = [];
+		revalidated = [];
+		await installCheckoutActionTestDeps("ignored-auth-cart", redirects, revalidated, {}, {
+			getOptionalAuthenticatedSession: async () => ({ id: "cliente-regular-id" }),
+			verifyCheckoutCaptcha: async () => {
+				signedInVerifierCalls++;
+				return { ok: false, reason: "missing" };
+			},
+		});
+		await assert.rejects(
+			() => checkoutAction(
+				{ ok: false, data: null, error: null },
+				formData({ customerName: "Cliente Auth", customerEmail: "auth@example.com" }),
+			),
+			(error: Error & { path?: string }) => {
+				assert.match(error.path ?? "", /^\/pedido\/confirmacion\/[a-f0-9]{64}$/);
+				return true;
+			},
+		);
+		assert.equal(signedInVerifierCalls, 0);
+		const signedInOrder = await prisma.order.findFirst({ where: { userId: "cliente-regular-id" }, orderBy: { createdAt: "desc" } });
+		assert.ok(signedInOrder);
+		assert.equal(signedInOrder.userId, "cliente-regular-id");
 	} finally {
 		await __resetCheckoutActionTestDependencies();
 		await resetCheckoutData(prisma).catch(() => undefined);

@@ -8,6 +8,7 @@ import { assessPasswordResetSendRisk, assessPasswordResetTokenRisk, PASSWORD_RES
 import { parseMarkdownToHtml, sanitizeHtml } from "../lib/server/blog/markdown.js";
 import { buildSilentUnauthenticatedSessionResponse, isStaticGenerationAuthSessionMiss } from "../lib/server/auth/session-error.js";
 import { buildRateLimitLogContext, buildThrottleResponse, checkRateLimit, createMemoryRateLimitStore, deriveRateLimitActorKey } from "../lib/server/security/rate-limit.js";
+import { verifyCheckoutCaptcha } from "../lib/server/security/checkout-captcha.js";
 import { buildSecurityHeaders } from "../lib/server/security/security-headers.js";
 import { buildServerActionConfig, parseServerActionAllowedOrigins } from "../lib/server/security/server-action-origin-policy.js";
 import nextConfig from "../next.config.mjs";
@@ -413,6 +414,41 @@ await test("server action allowed origin contract is documented for operators", 
 	assert.match(envExample, /Coolify|proxy/i);
 	assert.match(envExample, /wildcard/i);
 	assert.match(envExample, /without scheme/i);
+});
+
+await test("anonymous checkout CAPTCHA deploy variables and provider origins are documented", () => {
+	const envExample = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
+
+	assert.match(envExample, /NEXT_PUBLIC_CHECKOUT_CAPTCHA_SITE_KEY/);
+	assert.match(envExample, /CHECKOUT_CAPTCHA_SECRET_KEY/);
+	assert.match(envExample, /challenges\.cloudflare\.com/);
+	assert.match(envExample, /Turnstile/i);
+	assert.match(envExample, /secret.*server/i);
+});
+
+await test("checkout CAPTCHA verifier fails closed without exposing secrets", async () => {
+	await withEnv(
+		{
+			NEXT_PUBLIC_CHECKOUT_CAPTCHA_SITE_KEY: "1x00000000000000000000AA",
+			CHECKOUT_CAPTCHA_SECRET_KEY: undefined,
+		},
+		async () => {
+			let fetchCalled = false;
+			const result = await verifyCheckoutCaptcha({
+				token: "raw-captcha-token",
+				ip: "198.51.100.90",
+				userAgent: "RawCaptchaAgent/1.0",
+				fetchImpl: async () => {
+					fetchCalled = true;
+					return new Response(JSON.stringify({ success: true }), { status: 200 });
+				},
+			});
+
+			assert.deepEqual(result, { ok: false, reason: "unavailable" });
+			assert.equal(fetchCalled, false);
+			assertNoRawValues(result, ["raw-captcha-token", "198.51.100.90", "RawCaptchaAgent/1.0"]);
+		}
+	);
 });
 
 await test("static-generation auth request-scope misses become silent unauthenticated responses only during build", () => {
