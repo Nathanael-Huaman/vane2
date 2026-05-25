@@ -10,6 +10,8 @@ import {
 	getAdminOrderSummaries,
 	parseAdminOrderFilters,
 } from "@/lib/server/store/admin-orders.js";
+import { buildAdminOrderListPath } from "@/lib/server/store/admin-order-list-url.js";
+import { parseOrderListPage } from "@/lib/server/store/order-pagination.js";
 
 export const metadata = {
 	title: "Pedidos — Tienda Admin",
@@ -56,14 +58,27 @@ function StatusBadge({ order }) {
 	);
 }
 
-function toReturnPath(params) {
-	const query = new URLSearchParams();
-	for (const [key, value] of Object.entries(params ?? {})) {
-		const fieldValue = Array.isArray(value) ? value[0] : value;
-		if (["status", "q"].includes(key) && fieldValue) query.set(key, fieldValue);
-	}
-	const suffix = query.toString();
-	return suffix ? `/admin/tienda/pedidos?${suffix}` : "/admin/tienda/pedidos";
+function PaginationControls({ filters, pagination }) {
+	const previousPage = Math.max(1, pagination.page - 1);
+	const nextPage = pagination.page + 1;
+
+	return (
+		<nav aria-label="Paginación de pedidos" className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+			<span>Página {pagination.page}</span>
+			<div className="flex gap-2">
+				{pagination.hasPrevious ? (
+					<Button variant="outline" asChild><Link href={buildAdminOrderListPath(filters, previousPage)}>Anterior</Link></Button>
+				) : (
+					<Button variant="outline" disabled>Anterior</Button>
+				)}
+				{pagination.hasNext ? (
+					<Button variant="outline" asChild><Link href={buildAdminOrderListPath(filters, nextPage)}>Siguiente</Link></Button>
+				) : (
+					<Button variant="outline" disabled>Siguiente</Button>
+				)}
+			</div>
+		</nav>
+	);
 }
 
 function StatusForm({ order, returnTo }) {
@@ -93,8 +108,9 @@ export default async function AdminStoreOrdersPage({ searchParams }) {
 
 	const resolvedSearchParams = await searchParams;
 	const filters = parseAdminOrderFilters(resolvedSearchParams);
-	const returnTo = toReturnPath(resolvedSearchParams);
-	const orders = await getAdminOrderSummaries(filters);
+	const page = parseOrderListPage(resolvedSearchParams);
+	const { orders, pagination } = await getAdminOrderSummaries(filters, { page });
+	const returnTo = buildAdminOrderListPath(filters, pagination.page);
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -134,7 +150,7 @@ export default async function AdminStoreOrdersPage({ searchParams }) {
 				<p className={filters.invalidStatus ? "mb-4 text-sm text-destructive" : "mb-4 text-sm text-muted-foreground"}>
 					{filters.invalidStatus
 						? "El filtro de estado no es válido. Usa pending o confirmed."
-						: `${orders.length} pedido${orders.length === 1 ? "" : "s"} encontrado${orders.length === 1 ? "" : "s"}`}
+						: `${orders.length} pedido${orders.length === 1 ? "" : "s"} en esta página`}
 				</p>
 
 				{orders.length === 0 ? (
@@ -155,6 +171,8 @@ export default async function AdminStoreOrdersPage({ searchParams }) {
 						))}
 					</div>
 				)}
+
+				<PaginationControls filters={filters} pagination={pagination} />
 			</div>
 		</div>
 	);

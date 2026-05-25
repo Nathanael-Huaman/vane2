@@ -8,6 +8,12 @@ import {
 	parseAdminOrderFilters,
 	updateAdminOrderStatus,
 } from "../lib/server/store/admin-orders.js";
+import { buildAdminOrderListPath } from "../lib/server/store/admin-order-list-url.js";
+import {
+	getOrderListQueryWindow,
+	ORDER_LIST_PAGE_SIZE,
+	parseOrderListPage,
+} from "../lib/server/store/order-pagination.js";
 import { updateOrderStatusAction } from "../lib/actions/store-admin-orders.js";
 import {
 	__resetAdminOrdersActionTestDependencies,
@@ -15,10 +21,20 @@ import {
 } from "../lib/actions/store-admin-orders-dependencies.js";
 
 const DOMAIN = "admin-orders-view.test";
+const ADMIN_PAGE_QUERY = "Ana Page";
+const ADMIN_PAGE_ORDER_COUNT = ORDER_LIST_PAGE_SIZE + 2;
+const MAX_SAFE_ORDER_LIST_PAGE = Math.floor(Number.MAX_SAFE_INTEGER / ORDER_LIST_PAGE_SIZE) + 1;
 
 type RuntimePrisma = ReturnType<typeof createRuntimePrismaClient>;
 
-function order(customerName: string, email: string, status: "pending" | "confirmed", total: number, token: string) {
+function order(
+	customerName: string,
+	email: string,
+	status: "pending" | "confirmed",
+	total: number,
+	token: string,
+	overrides: Record<string, unknown> = {},
+) {
 	return {
 		customerName,
 		customerEmail: `${email}@${DOMAIN}`,
@@ -26,7 +42,32 @@ function order(customerName: string, email: string, status: "pending" | "confirm
 		subtotalMinorUnits: total,
 		totalMinorUnits: total,
 		confirmationTokenHash: token,
+		...overrides,
 	};
+}
+
+function pageLabel(index: number) {
+	return String(index).padStart(2, "0");
+}
+
+function adminPageOrder(index: number) {
+	const label = pageLabel(index);
+	return order(
+		`${ADMIN_PAGE_QUERY} ${label}`,
+		`ana-page-${label}`,
+		"pending",
+		10_000 + index,
+		`admin-orders-view-token-page-${label}`,
+		{
+			id: `admin-orders-page-${label}`,
+			createdAt: new Date(`2026-03-${label}T10:00:00.000Z`),
+		},
+	);
+}
+
+function expectedAdminPageIdsDescending() {
+	return Array.from({ length: ADMIN_PAGE_ORDER_COUNT }, (_, index) => ADMIN_PAGE_ORDER_COUNT - index)
+		.map((index) => `admin-orders-page-${pageLabel(index)}`);
 }
 
 async function resetOrders(prisma: RuntimePrisma) {
@@ -43,6 +84,7 @@ async function firstActiveProduct(prisma: RuntimePrisma) {
 async function seedOrders(prisma: RuntimePrisma) {
 	await prisma.order.createMany({
 		data: [
+			...Array.from({ length: ADMIN_PAGE_ORDER_COUNT }, (_, index) => adminPageOrder(index + 1)),
 			order("Ana Pending", "ana", "pending", 12500, "admin-orders-view-token-1"),
 			order("Bruno Confirmado", "bruno", "confirmed", 9900, "admin-orders-view-token-2"),
 			order("Carla Search", "lookup", "pending", 5000, "admin-orders-view-token-3"),
@@ -92,30 +134,94 @@ function testStatusParsing() {
 	assert.equal(parseAdminOrderStatus(null), null);
 }
 
+function testPaginationParsing() {
+	assert.equal(ORDER_LIST_PAGE_SIZE, 10);
+	assert.equal(parseOrderListPage(undefined), 1);
+	assert.equal(parseOrderListPage("3"), 3);
+	assert.equal(parseOrderListPage({ page: "2" }), 2);
+	assert.equal(parseOrderListPage({ page: ["4"] }), 4);
+	assert.equal(parseOrderListPage(new URLSearchParams("page=5")), 5);
+	assert.equal(parseOrderListPage("0"), 1);
+	assert.equal(parseOrderListPage("-3"), 1);
+	assert.equal(parseOrderListPage("1.5"), 1);
+	assert.equal(parseOrderListPage("abc"), 1);
+	assert.equal(parseOrderListPage(MAX_SAFE_ORDER_LIST_PAGE), MAX_SAFE_ORDER_LIST_PAGE);
+	assert.equal(parseOrderListPage(MAX_SAFE_ORDER_LIST_PAGE + 1), MAX_SAFE_ORDER_LIST_PAGE);
+
+	const cappedWindow = getOrderListQueryWindow(Number.MAX_SAFE_INTEGER);
+	assert.equal(cappedWindow.page, MAX_SAFE_ORDER_LIST_PAGE);
+	assert.equal(Number.isSafeInteger(cappedWindow.skip), true);
+	assert.equal(cappedWindow.skip <= Number.MAX_SAFE_INTEGER, true);
+}
+
+function testAdminOrderListPath() {
+	assert.equal(
+		buildAdminOrderListPath(parseAdminOrderFilters({ status: " pending ", q: "  Ana    Page  " }), 3),
+		"/admin/tienda/pedidos?status=pending&q=Ana+Page&page=3",
+	);
+	assert.equal(
+		buildAdminOrderListPath(parseAdminOrderFilters({ status: " paid ", q: "  Luis   Admin  " }), 2),
+		"/admin/tienda/pedidos?q=Luis+Admin&page=2",
+	);
+	assert.equal(
+		buildAdminOrderListPath(parseAdminOrderFilters({ status: "confirmed", q: "" }), 1),
+		"/admin/tienda/pedidos?status=confirmed",
+	);
+}
+
 async function testOrderSummaries(prisma: RuntimePrisma) {
-	const all = await getAdminOrderSummaries(parseAdminOrderFilters({}));
-	const testOrders = all.filter((summary) => summary.customerEmail.endsWith(DOMAIN));
-	assert.equal(testOrders.length, 4);
-	for (const summary of testOrders) {
+	const expectedIds = expectedAdminPageIdsDescending();
+	const pageOne = await getAdminOrderSummaries(parseAdminOrderFilters({ status: "pending", q: ADMIN_PAGE_QUERY }), { page: 1 });
+	assert.deepEqual(pageOne.pagination, {
+		page: 1,
+		pageSize: ORDER_LIST_PAGE_SIZE,
+		hasPrevious: false,
+		hasNext: true,
+	});
+	assert.equal(pageOne.orders.length, ORDER_LIST_PAGE_SIZE);
+	assert.deepEqual(pageOne.orders.map((summary) => summary.id), expectedIds.slice(0, ORDER_LIST_PAGE_SIZE));
+
+	const pageTwo = await getAdminOrderSummaries(parseAdminOrderFilters({ status: "pending", q: ADMIN_PAGE_QUERY }), { page: 2 });
+	assert.deepEqual(pageTwo.pagination, {
+		page: 2,
+		pageSize: ORDER_LIST_PAGE_SIZE,
+		hasPrevious: true,
+		hasNext: false,
+	});
+	assert.deepEqual(pageTwo.orders.map((summary) => summary.id), expectedIds.slice(ORDER_LIST_PAGE_SIZE));
+
+	const invalidPage = await getAdminOrderSummaries(parseAdminOrderFilters({ status: "pending", q: ADMIN_PAGE_QUERY }), { page: "abc" });
+	assert.equal(invalidPage.pagination.page, 1);
+	assert.deepEqual(invalidPage.orders.map((summary) => summary.id), pageOne.orders.map((summary) => summary.id));
+
+	const fractionalPage = await getAdminOrderSummaries(parseAdminOrderFilters({ status: "pending", q: ADMIN_PAGE_QUERY }), { page: "2.5" });
+	assert.equal(fractionalPage.pagination.page, 1);
+	assert.deepEqual(fractionalPage.orders.map((summary) => summary.id), pageOne.orders.map((summary) => summary.id));
+
+	for (const summary of [...pageOne.orders, ...pageTwo.orders]) {
 		assert.equal(Object.hasOwn(summary, "confirmationTokenHash"), false);
 		assert.match(summary.totalLabel, /^S\/\. \d+\.\d{2}$/);
 		assert.match(summary.createdAtLabel, /\d/);
+		assert.equal(summary.status, "pending");
 	}
 
-	const pending = await getAdminOrderSummaries(parseAdminOrderFilters({ status: "pending" }));
-	const pendingTestOrders = pending.filter((summary) => summary.customerEmail.endsWith(DOMAIN));
-	assert.equal(pendingTestOrders.length, 3);
-	assert.ok(pendingTestOrders.every((summary) => summary.status === "pending"));
-	assert.equal(pendingTestOrders.some((summary) => summary.customerName === "Bruno Confirmado"), false);
-
-	const confirmed = await getAdminOrderSummaries(parseAdminOrderFilters({ status: "confirmed" }));
+	const confirmed = await getAdminOrderSummaries(parseAdminOrderFilters({ status: "confirmed", q: "bruno@" }));
 	assert.deepEqual(
-		confirmed.filter((summary) => summary.customerEmail.endsWith(DOMAIN)).map((summary) => summary.customerName),
+		confirmed.orders.map((summary) => summary.customerName),
 		["Bruno Confirmado"],
 	);
-	assert.deepEqual((await getAdminOrderSummaries(parseAdminOrderFilters({ q: "Carla" }))).map((summary) => summary.customerEmail), [`lookup@${DOMAIN}`]);
-	assert.deepEqual((await getAdminOrderSummaries(parseAdminOrderFilters({ q: "bruno@" }))).map((summary) => summary.customerName), ["Bruno Confirmado"]);
-	assert.deepEqual(await getAdminOrderSummaries(parseAdminOrderFilters({ status: "paid" })), []);
+	assert.equal(confirmed.pagination.hasNext, false);
+	assert.deepEqual((await getAdminOrderSummaries(parseAdminOrderFilters({ q: "Carla" }))).orders.map((summary) => summary.customerEmail), [`lookup@${DOMAIN}`]);
+	assert.deepEqual((await getAdminOrderSummaries(parseAdminOrderFilters({ q: "bruno@" }))).orders.map((summary) => summary.customerName), ["Bruno Confirmado"]);
+
+	const invalidStatus = await getAdminOrderSummaries(parseAdminOrderFilters({ status: "paid" }), { page: 3 });
+	assert.deepEqual(invalidStatus.orders, []);
+	assert.deepEqual(invalidStatus.pagination, {
+		page: 3,
+		pageSize: ORDER_LIST_PAGE_SIZE,
+		hasPrevious: true,
+		hasNext: false,
+	});
 }
 
 async function testOrderDetail(prisma: RuntimePrisma, detailOrderId: string, product: Awaited<ReturnType<typeof firstActiveProduct>>) {
@@ -216,11 +322,11 @@ async function testAuthorizedStatusAction(prisma: RuntimePrisma, detailOrderId: 
 	const listForm = new FormData();
 	listForm.set("id", detailOrderId);
 	listForm.set("status", "confirmed");
-	listForm.set("returnTo", "/admin/tienda/pedidos?status=pending&q=Detalle");
+	listForm.set("returnTo", "/admin/tienda/pedidos?page=3&status=pending&q=Detalle");
 	await assert.rejects(() => updateOrderStatusAction(null, listForm), /NEXT_REDIRECT_TEST/);
 	assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: detailOrderId } })).status, "confirmed");
 	assert.deepEqual(revalidated, ["/admin/tienda/pedidos", `/admin/tienda/pedidos/${detailOrderId}`]);
-	assert.equal(redirects[0], "/admin/tienda/pedidos?status=pending&q=Detalle");
+	assert.equal(redirects[0], "/admin/tienda/pedidos?page=3&status=pending&q=Detalle");
 
 	const detailForm = new FormData();
 	detailForm.set("id", detailOrderId);
@@ -243,6 +349,8 @@ async function testAuthorizedStatusAction(prisma: RuntimePrisma, detailOrderId: 
 async function main() {
 	testFilterParsing();
 	testStatusParsing();
+	testPaginationParsing();
+	testAdminOrderListPath();
 	const prisma = createRuntimePrismaClient();
 	let mutatedProduct: Awaited<ReturnType<typeof firstActiveProduct>> | null = null;
 	try {

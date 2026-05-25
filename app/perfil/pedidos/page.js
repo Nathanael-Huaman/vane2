@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { resolvePageAuthContext } from "@/lib/server/session";
 import { getCustomerOrderSummaries } from "@/lib/server/store/orders.js";
+import { parseOrderListPage } from "@/lib/server/store/order-pagination.js";
 
 export const metadata = {
   title: "Mis pedidos",
@@ -44,14 +45,50 @@ function StatusBadge({ order }) {
   );
 }
 
-export default async function CustomerOrdersPage() {
+function buildCustomerOrdersPageHref(page) {
+  const query = new URLSearchParams();
+  if (page > 1) query.set("page", String(page));
+  const suffix = query.toString();
+  return suffix ? `/perfil/pedidos?${suffix}` : "/perfil/pedidos";
+}
+
+function PaginationControls({ pagination }) {
+  const previousPage = Math.max(1, pagination.page - 1);
+  const nextPage = pagination.page + 1;
+
+  return (
+    <nav aria-label="Paginación de mis pedidos" className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+      <span>Página {pagination.page}</span>
+      <div className="flex gap-2">
+        {pagination.hasPrevious ? (
+          <Button variant="outline" asChild>
+            <Link href={buildCustomerOrdersPageHref(previousPage)}>Anterior</Link>
+          </Button>
+        ) : (
+          <Button variant="outline" disabled>Anterior</Button>
+        )}
+        {pagination.hasNext ? (
+          <Button variant="outline" asChild>
+            <Link href={buildCustomerOrdersPageHref(nextPage)}>Siguiente</Link>
+          </Button>
+        ) : (
+          <Button variant="outline" disabled>Siguiente</Button>
+        )}
+      </div>
+    </nav>
+  );
+}
+
+export default async function CustomerOrdersPage({ searchParams }) {
   const { user, isAuthenticated, hasAuthError } =
     await resolvePageAuthContext();
 
   if (hasAuthError) return <AccessState type="error" />;
   if (!isAuthenticated) return <AccessState type="login" />;
 
-  const orders = await getCustomerOrderSummaries(user.id);
+  const resolvedSearchParams = await searchParams;
+  const page = parseOrderListPage(resolvedSearchParams);
+  const { orders, pagination } = await getCustomerOrderSummaries(user.id, { page });
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,8 +109,7 @@ export default async function CustomerOrdersPage() {
         </header>
 
         <p className="mb-4 text-sm text-muted-foreground">
-          {orders.length} pedido{orders.length === 1 ? "" : "s"} encontrado
-          {orders.length === 1 ? "" : "s"}
+          {orders.length} pedido{orders.length === 1 ? "" : "s"} en esta página
         </p>
 
         {orders.length === 0 ? (
@@ -119,6 +155,8 @@ export default async function CustomerOrdersPage() {
             ))}
           </div>
         )}
+
+        <PaginationControls pagination={pagination} />
       </div>
     </div>
   );
