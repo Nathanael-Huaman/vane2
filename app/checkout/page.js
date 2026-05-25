@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { CheckoutCaptcha } from "@/components/store/checkout-captcha";
 import { Button } from "@/components/ui/button"; import { Input } from "@/components/ui/input"; import { Label } from "@/components/ui/label";
 import { checkoutAction } from "@/lib/actions/store-checkout";
 import { getOptionalAuthenticatedSession } from "@/lib/server/auth/auth-session";
@@ -14,12 +15,13 @@ async function resolveCartReadContext() {
 	return { userId, anonymousToken: userId ? null : (cookieStore.get(STORE_CART_COOKIE_NAME)?.value ?? null) };
 }
 
-function CheckoutForm() {
+function CheckoutForm({ requiresCaptcha }) {
 	return (
 		<form action={checkoutAction} className="space-y-4 rounded-lg border bg-card p-6">
 			<h2 className="text-xl font-semibold">Datos de contacto</h2>
 			<div className="space-y-2"><Label htmlFor="customerName">Nombre completo</Label><Input id="customerName" name="customerName" maxLength={120} required /></div>
 			<div className="space-y-2"><Label htmlFor="customerEmail">Correo electrónico</Label><Input id="customerEmail" name="customerEmail" type="email" maxLength={254} required /></div>
+			{requiresCaptcha ? <CheckoutCaptcha /> : null}
 			<Button type="submit">Crear pedido</Button>
 		</form>
 	);
@@ -41,7 +43,8 @@ function CheckoutSummary({ cart }) {
 }
 
 export default async function CheckoutPage() {
-	const cart = await getCurrentCartSummary(await resolveCartReadContext());
+	const context = await resolveCartReadContext();
+	const cart = await getCurrentCartSummary(context);
 	return (
 		<main className="min-h-screen bg-background p-8">
 			<div className="mx-auto max-w-3xl space-y-6">
@@ -54,7 +57,7 @@ export default async function CheckoutPage() {
 					</section>
 				) : (
 					<div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem]">
-						<CheckoutForm />
+						<CheckoutForm requiresCaptcha={!context.userId} />
 						<CheckoutSummary cart={cart} />
 					</div>
 				)}
