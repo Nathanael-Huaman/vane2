@@ -1,0 +1,21 @@
+{
+  "all": true,
+  "reporter": ["text", "lcov", "html"],
+  "reports-dir": "coverage",
+  "extension": [".js", ".jsx", ".mjs", ".ts", ".tsx"],
+  "include": ["app/**", "components/**", "hooks/**", "lib/**"],
+  "exclude": [
+    "lib/generated/**",
+    "lib/testing/**",
+    "scripts/**",
+    "e2e/**",
+    "coverage/**",
+    ".next/**",
+    "next-env.d.ts",
+    "*.config.*",
+    "**/*.d.ts",
+    "**/*{.,-}test.{js,cjs,mjs,ts,tsx,jsx}",
+    "**/__tests__/**"
+  ],
+  "exclude-after-remap": true
+}

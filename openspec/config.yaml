@@ -31,8 +31,8 @@ testing:
       available: true
       tool: Playwright
   coverage:
-    available: false
-    command: ""
+    available: true
+    command: pnpm test:coverage
   quality:
     linter:
       available: true
