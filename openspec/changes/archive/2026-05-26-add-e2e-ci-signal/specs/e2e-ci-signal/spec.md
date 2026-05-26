@@ -1,11 +1,9 @@
 # E2E CI Signal Specification
-
 ## Purpose
 
 Define a narrow, PR-gated Playwright/Chromium smoke signal in CI without expanding the default test command, full E2E suite, browser matrix, or product behavior.
 
 ## Requirements
-
 ### Requirement: PR-gated E2E smoke job
 
 The system MUST run a separate E2E smoke CI signal for pull requests.
