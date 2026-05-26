@@ -161,11 +161,11 @@ test.describe("Store admin orders", () => {
 
 		await page.goto("/admin/tienda/pedidos");
 
-		await expect(page.getByText("Acceso denegado")).toBeVisible();
+		await expect(page.getByRole("main").getByText("Acceso denegado")).toBeVisible();
 		await expect(page.getByText("Cliente Vista Admin Denegada")).toHaveCount(0);
 
 		await page.goto(`/admin/tienda/pedidos/${order.id}`);
-		await expect(page.getByText("Acceso denegado")).toBeVisible();
+		await expect(page.getByRole("main").getByText("Acceso denegado")).toBeVisible();
 		await expect(page.getByText(`denegado@${TEST_DOMAIN}`)).toHaveCount(0);
 	});
 });
